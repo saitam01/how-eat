@@ -1,0 +1,17 @@
+{
+  "name": "how-eat",
+  "short_name": "how-eat",
+  "description": "Calculadora offline de TDEE y macros.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#047857",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

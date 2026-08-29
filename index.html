@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Strict CSP (PRD §5 / accessibility-responsive): no eval, no inline scripts, no
+         third-party network. Only `style-src` allows inline styles because Radix UI
+         positions controls via inline `style` attributes. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'; manifest-src 'self'"
+    />
+
+    <title>how-eat · Calculá tus calorías y macros</title>
+    <meta
+      name="description"
+      content="Calculadora offline de TDEE y macronutrientes. Sin cuenta, sin servidor, sin red."
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_AR" />
+    <meta property="og:title" content="how-eat · Calculá tus calorías y macros" />
+    <meta
+      property="og:description"
+      content="Calculadora offline de TDEE y macros. Privada por diseño."
+    />
+
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./src/main.tsx"></script>
+  </body>
+</html>
