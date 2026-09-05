@@ -1,5 +1,8 @@
 # Local Pi runtime state
 .atl/
+.codegraph/
+.pi/gentle-ai/
+agents.md
 
 # Node
 node_modules/
