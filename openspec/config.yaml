@@ -73,5 +73,5 @@ conventions:
   accessibility: WCAG21AA
   persistence_key: 'how-eat:v1' # localStorage JSON (Inputs + Macros)
 
-# Current active change established by this init.
-active_change: how-eat-mvp
+# No active change; completed changes are archived.
+active_change: null
