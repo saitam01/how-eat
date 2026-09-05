@@ -24,7 +24,9 @@ function fallbackExecCommand(text: string): boolean {
 
 export async function copyToClipboard(text: string): Promise<CopyResult> {
   const secure =
-    typeof window !== 'undefined' && window.isSecureContext === true && !!navigator.clipboard?.writeText;
+    typeof window !== 'undefined' &&
+    window.isSecureContext === true &&
+    !!navigator.clipboard?.writeText;
   if (secure) {
     try {
       await navigator.clipboard.writeText(text);

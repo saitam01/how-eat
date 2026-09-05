@@ -11,6 +11,11 @@ interface MealLogProps {
   onClear: () => void;
 }
 
+// Helper to format a number with one decimal place, rounded up
+const formatUp = (value: number): string => {
+  return Math.ceil(value * 10) / 10 + '';
+};
+
 function getFoodName(foodId: string): string {
   const item = foodDB.items.find((f) => f.id === foodId);
   return item?.name ?? foodId;
@@ -29,36 +34,39 @@ function ProgressBar({
   consumed: number;
   unit: string;
 }) {
-  const clamped = Math.min(percentage, 150);
+  // Calculate clamped percentage for width (0-100)
+  const clamped = Math.min(Math.ceil(percentage), 100);
   const color =
     percentage > 100 ? 'bg-amber-500' : percentage >= 80 ? 'bg-emerald-500' : 'bg-emerald-400';
 
   const diff = consumed - target;
   const diffText =
     percentage > 100
-      ? `+${Math.round(diff)}${unit} ${i18n.excess}`
+      ? `+${Math.ceil(diff)}${unit} ${i18n.excess}`
       : percentage >= 80
         ? `✓ ${i18n.onTarget}`
-        : `${Math.round(diff)}${unit} ${i18n.deficit}`;
+        : `${Math.ceil(diff)}${unit} ${i18n.deficit}`;
 
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between text-sm">
         <span className="text-muted-foreground">{label}</span>
-        <span className="tabular-nums text-muted-foreground">{percentage.toFixed(0)}%</span>
+        <span className="tabular-nums text-muted-foreground">
+          {Math.ceil(percentage).toFixed(0)}%
+        </span>
       </div>
       <div className="flex items-center gap-2">
         <div
           className="h-2 flex-1 overflow-hidden rounded-full bg-muted"
           role="progressbar"
-          aria-valuenow={Math.round(percentage)}
+          aria-valuenow={Math.ceil(percentage)}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label={`${label}: ${percentage.toFixed(0)}%`}
+          aria-label={`${label}: ${Math.ceil(percentage).toFixed(0)}%`}
         >
           <div
             className={`h-full rounded-full transition-all ${color}`}
-            style={{ width: `${Math.min(clamped, 100)}%` }}
+            style={{ width: `${clamped}%` }}
           />
         </div>
         <span className="w-24 text-right text-xs tabular-nums text-muted-foreground">
@@ -69,14 +77,7 @@ function ProgressBar({
   );
 }
 
-export const MealLog = ({
-  entries,
-  totals,
-  progress,
-  goal,
-  onRemove,
-  onClear,
-}: MealLogProps) => {
+export const MealLog = ({ entries, totals, progress, goal, onRemove, onClear }: MealLogProps) => {
   if (entries.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border p-6 text-center">
@@ -102,21 +103,21 @@ export const MealLog = ({
         <ProgressBar
           label={i18n.mealLogProtein}
           percentage={progress.protein}
-          target={Math.round((goal.energyTargetKcal * goal.proteinPct) / 100 / 4)}
+          target={Math.ceil((goal.energyTargetKcal * goal.proteinPct) / 100 / 4)}
           consumed={totals.proteinG}
           unit="g"
         />
         <ProgressBar
           label={i18n.mealLogCarbs}
           percentage={progress.carbs}
-          target={Math.round((goal.energyTargetKcal * goal.carbsPct) / 100 / 4)}
+          target={Math.ceil((goal.energyTargetKcal * goal.carbsPct) / 100 / 4)}
           consumed={totals.carbsG}
           unit="g"
         />
         <ProgressBar
           label={i18n.mealLogFat}
           percentage={progress.fat}
-          target={Math.round((goal.energyTargetKcal * goal.fatPct) / 100 / 9)}
+          target={Math.ceil((goal.energyTargetKcal * goal.fatPct) / 100 / 9)}
           consumed={totals.fatG}
           unit="g"
         />
@@ -130,19 +131,19 @@ export const MealLog = ({
         <div className="grid grid-cols-4 gap-2 text-sm">
           <div>
             <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
-            <p className="font-medium tabular-nums">{totals.energyKcal} kcal</p>
+            <p className="font-medium tabular-nums">{formatUp(totals.energyKcal)} kcal</p>
           </div>
           <div>
             <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
-            <p className="font-medium tabular-nums">{totals.proteinG}g</p>
+            <p className="font-medium tabular-nums">{formatUp(totals.proteinG)}g</p>
           </div>
           <div>
             <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
-            <p className="font-medium tabular-nums">{totals.carbsG}g</p>
+            <p className="font-medium tabular-nums">{formatUp(totals.carbsG)}g</p>
           </div>
           <div>
             <span className="text-muted-foreground">{i18n.mealLogFat}</span>
-            <p className="font-medium tabular-nums">{totals.fatG}g</p>
+            <p className="font-medium tabular-nums">{formatUp(totals.fatG)}g</p>
           </div>
         </div>
       </div>
@@ -150,12 +151,15 @@ export const MealLog = ({
       {/* Entries list */}
       <div className="space-y-2">
         {entries.map((entry) => (
-          <div key={entry.id} className="flex items-center justify-between rounded-md border border-border p-3">
+          <div
+            key={entry.id}
+            className="flex items-center justify-between rounded-md border border-border p-3"
+          >
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium">{getFoodName(entry.foodId)}</p>
               <p className="text-xs text-muted-foreground">
-                {entry.amount} — {entry.energyKcal} kcal, {entry.proteinG}g prot,{' '}
-                {entry.carbsG}g carb, {entry.fatG}g grasa
+                {entry.amount} — {formatUp(entry.energyKcal)} kcal, {formatUp(entry.proteinG)}g
+                prot, {formatUp(entry.carbsG)}g carb, {formatUp(entry.fatG)}g grasa
               </p>
             </div>
             <button

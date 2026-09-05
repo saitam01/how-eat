@@ -1,18 +1,5 @@
 import { useEffect, useState } from 'react';
-
-export interface ToastItem {
-  id: number;
-  message: string;
-}
-
-const toastListeners = new Set<(item: ToastItem) => void>();
-let toastSeq = 0;
-
-/** Lightweight module-level toast (design: no third-party toast dep). */
-export function toast(message: string): void {
-  const item: ToastItem = { id: ++toastSeq, message };
-  toastListeners.forEach((l) => l(item));
-}
+import { subscribeToasts, type ToastItem } from '@/lib/toast';
 
 export function Toaster() {
   const [items, setItems] = useState<ToastItem[]>([]);
@@ -23,10 +10,7 @@ export function Toaster() {
         setItems((prev) => prev.filter((t) => t.id !== item.id));
       }, 2600);
     };
-    toastListeners.add(onToast);
-    return () => {
-      toastListeners.delete(onToast);
-    };
+    return subscribeToasts(onToast);
   }, []);
 
   return (

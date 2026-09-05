@@ -6,7 +6,9 @@ export type FoodCategory =
   | 'dairy'
   | 'fat'
   | 'grain'
-  | 'snack';
+  | 'snack'
+  | 'beverage'
+  | 'vegan';
 
 export interface FoodItem {
   id: string;

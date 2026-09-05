@@ -1,5 +1,5 @@
 import type { ActivityLevel, AppState, Goal, Inputs, Macros, PresetKey, Sex } from '@/types';
-import { DEFAULT_INPUTS, DEFAULT_MACROS, DEFAULT_PRESET, PRESETS, RANGES } from '@/lib/constants';
+import { DEFAULT_INPUTS, DEFAULT_MACROS, DEFAULT_PRESET, RANGES } from '@/lib/constants';
 import { normalizeTo100 } from '@/lib/macros';
 import { resolvePreset } from '@/lib/validation';
 import { loadPersisted } from './storage';
@@ -51,7 +51,8 @@ export function parseUrlParams(
   let invalid = false;
   const sex = p.get('s');
   if (sex) {
-    if (SEXES.includes(sex as Sex)) partial.inputs = { ...(partial.inputs || {}), sex: sex as Sex } as Inputs;
+    if (SEXES.includes(sex as Sex))
+      partial.inputs = { ...(partial.inputs || {}), sex: sex as Sex } as Inputs;
     else invalid = true;
   }
   const a = num(p.get('a'));
@@ -86,7 +87,8 @@ export function parseUrlParams(
   }
   const g = p.get('g');
   if (g) {
-    if (GOALS.includes(g as Goal)) (partial.inputs || (partial.inputs = {} as Inputs)).goal = g as Goal;
+    if (GOALS.includes(g as Goal))
+      (partial.inputs || (partial.inputs = {} as Inputs)).goal = g as Goal;
     else invalid = true;
   }
   const pct = (k: 'proteinPct' | 'carbsPct' | 'fatPct', key: string) => {

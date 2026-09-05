@@ -1,14 +1,8 @@
 import type { Result } from '@/types';
 import { useDebouncedValue } from '@/hooks/useDebouncedValue';
+import { buildAnnouncement } from '@/lib/result';
 import { Button } from '@/components/ui/button';
 import i18n from '@/i18n/es.json';
-
-/** Builds the screen-reader announcement for the current result (design D4). */
-export function buildAnnouncement(r: Result): string {
-  return `Objetivo: ${r.targetCalories} kcal por día. Proteína ${r.macros.protein.grams} g, Carbohidratos ${r.macros.carbs.grams} g, Grasa ${r.macros.fat.grams} g. Fórmula: ${
-    r.formulaUsed === 'katch-mcardle' ? 'Katch-McArdle' : 'Mifflin-St Jeor'
-  }.`;
-}
 
 export interface ResultCardProps {
   result: Result | null;
@@ -59,10 +53,7 @@ export function ResultCard({ result, onReset }: ResultCardProps) {
               <div className="space-y-1">
                 <span className="block">{i18n[labelKey]}</span>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                  <div
-                    className="h-full rounded-full bg-brand"
-                    style={{ width: `${m.pct}%` }}
-                  />
+                  <div className="h-full rounded-full bg-brand" style={{ width: `${m.pct}%` }} />
                 </div>
               </div>
               <span className="text-right tabular-nums">

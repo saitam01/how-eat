@@ -61,7 +61,7 @@ describe('copyToClipboard', () => {
     setSecure(true);
     const writeText = mockClipboard();
     writeText.mockRejectedValueOnce(new Error('denied'));
-    const exec = mockExecCommand(true);
+    mockExecCommand(true);
     const res = await copyToClipboard('hello');
     expect(res.ok).toBe(true);
     expect(res.method).toBe('execCommand');

@@ -33,7 +33,9 @@ const expectedPartial = {
 describe('serializeParams', () => {
   it('serializes a full state including macros, preset and bodyFatPct', () => {
     const qs = serializeParams(state);
-    expect(qs).toBe('s=female&a=45&h=165&w=60&b=22&ac=light&g=lose&p=40&c=30&f=30&pr=alta_proteina');
+    expect(qs).toBe(
+      's=female&a=45&h=165&w=60&b=22&ac=light&g=lose&p=40&c=30&f=30&pr=alta_proteina',
+    );
   });
 
   it('omits bodyFatPct when absent', () => {

@@ -98,9 +98,9 @@ describe('MealLog', () => {
   it('shows progress bars with correct percentages', () => {
     render(<MealLog {...defaultProps} />);
 
-    // Component uses toFixed(0) for display, so 13.45 -> "13%", 63.2 -> "63%", etc.
-    expect(screen.getByText('13%')).toBeInTheDocument();
-    expect(screen.getByText('63%')).toBeInTheDocument();
+    // Component uses Math.ceil for display, so 13.45 -> "14%", 63.2 -> "64%", etc.
+    expect(screen.getByText('14%')).toBeInTheDocument();
+    expect(screen.getByText('64%')).toBeInTheDocument();
     expect(screen.getByText('28%')).toBeInTheDocument();
     expect(screen.getByText('18%')).toBeInTheDocument();
   });

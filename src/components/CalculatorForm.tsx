@@ -7,8 +7,14 @@ import { validateInputs } from '@/lib/validation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from '@/components/ui/toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from '@/lib/toast';
 import i18n from '@/i18n/es.json';
 
 type FieldError = 'required' | 'invalid' | 'clamped';
@@ -218,7 +224,12 @@ export function CalculatorForm({ inputs, onChange, errors }: CalculatorFormProps
         error={requiredError('bodyFatPct')}
       />
 
-      <Field id="activity" label={i18n.activity} tooltip={TIP.activity} error={requiredError('activity')}>
+      <Field
+        id="activity"
+        label={i18n.activity}
+        tooltip={TIP.activity}
+        error={requiredError('activity')}
+      >
         <Select
           value={inputs.activity}
           onValueChange={(v) => onChange({ activity: v as ActivityLevel })}

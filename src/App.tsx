@@ -11,9 +11,11 @@ import { ResultCard } from '@/components/ResultCard';
 import { ShareButton } from '@/components/ShareButton';
 import { FoodSearch } from '@/components/FoodSearch';
 import { MealLog } from '@/components/MealLog';
+import { WeeklyPlan } from '@/components/WeeklyPlan';
 import { Disclaimer } from '@/components/Disclaimer';
 import { TabBar, type TabKey } from '@/components/TabBar';
-import { toast, Toaster } from '@/components/ui/toast';
+import { Toaster } from '@/components/ui/toast';
+import { toast } from '@/lib/toast';
 import i18n from '@/i18n/es.json';
 
 export function App() {
@@ -111,6 +113,12 @@ export function App() {
                 </aside>
               </div>
             )}
+          </div>
+        )}
+
+        {activeTab === 'plan' && (
+          <div>
+            <WeeklyPlan goal={goal} mealLogEntries={mealLog.entries} />
           </div>
         )}
 

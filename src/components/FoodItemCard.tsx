@@ -4,8 +4,6 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import i18n from '@/i18n/es.json';
 
-const KCAL_PER_GRAM: Record<string, number> = { protein: 4, carbs: 4, fat: 9 };
-
 interface FoodItemCardProps {
   food: FoodItem;
   onSelect: (food: FoodItem, quantity: number) => void;
@@ -19,10 +17,10 @@ export function FoodItemCard({ food, onSelect }: FoodItemCardProps) {
   const max = 10;
 
   const preview = {
-    calories: Math.round(food.energyKcal * quantity * 10) / 10,
-    protein: Math.round(food.proteinG * quantity * 10) / 10,
-    carbs: Math.round(food.carbsG * quantity * 10) / 10,
-    fat: Math.round(food.fatG * quantity * 10) / 10,
+    calories: Math.ceil(food.energyKcal * quantity * 10) / 10,
+    protein: Math.ceil(food.proteinG * quantity * 10) / 10,
+    carbs: Math.ceil(food.carbsG * quantity * 10) / 10,
+    fat: Math.ceil(food.fatG * quantity * 10) / 10,
   };
 
   const handleDecrease = () => setQuantity((q) => Math.max(min, q - step));
@@ -77,9 +75,7 @@ export function FoodItemCard({ food, onSelect }: FoodItemCardProps) {
             >
               −
             </Button>
-            <span className="w-10 text-center text-sm font-mono tabular-nums">
-              {quantity}
-            </span>
+            <span className="w-10 text-center text-sm font-mono tabular-nums">{quantity}</span>
             <Button
               variant="outline"
               size="icon"

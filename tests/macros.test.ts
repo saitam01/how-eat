@@ -1,10 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  largestRemainder,
-  redistributeMacros,
-  normalizeTo100,
-  macroSum,
-} from '@/lib/macros';
+import { largestRemainder, redistributeMacros, normalizeTo100, macroSum } from '@/lib/macros';
 import type { Macros } from '@/types';
 
 const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
@@ -33,7 +28,9 @@ describe('largestRemainder', () => {
 
 describe('redistributeMacros', () => {
   it('fixes moved slider and renormalizes the other two', () => {
-    expect(redistributeMacros('proteinPct', 50, { proteinPct: 30, carbsPct: 40, fatPct: 30 })).toEqual({
+    expect(
+      redistributeMacros('proteinPct', 50, { proteinPct: 30, carbsPct: 40, fatPct: 30 }),
+    ).toEqual({
       proteinPct: 50,
       carbsPct: 29,
       fatPct: 21,
@@ -41,7 +38,9 @@ describe('redistributeMacros', () => {
   });
 
   it('handles a lower moved value', () => {
-    expect(redistributeMacros('proteinPct', 40, { proteinPct: 30, carbsPct: 35, fatPct: 35 })).toEqual({
+    expect(
+      redistributeMacros('proteinPct', 40, { proteinPct: 30, carbsPct: 35, fatPct: 35 }),
+    ).toEqual({
       proteinPct: 40,
       carbsPct: 30,
       fatPct: 30,

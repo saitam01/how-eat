@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { copyToClipboard } from '@/lib/clipboard';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/toast';
+import { toast } from '@/lib/toast';
 import i18n from '@/i18n/es.json';
 
 export interface ShareButtonProps {
