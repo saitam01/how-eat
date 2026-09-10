@@ -51,6 +51,23 @@ describe('storage', () => {
     expect(loadPersisted()).toBeNull();
   });
 
+  it('characterizes the unsafe shallow check: nested invalid fields currently pass', () => {
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ inputs: { age: 'not-a-number' }, macros: { proteinPct: null } }),
+    );
+    expect(loadPersisted()).toEqual({
+      inputs: { age: 'not-a-number' },
+      macros: { proteinPct: null },
+    });
+  });
+
+  it('characterizes the unsafe unversioned check: unknown-version-like data currently passes', () => {
+    const unknownVersion = { schemaVersion: 999, inputs: {}, macros: {} };
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(unknownVersion));
+    expect(loadPersisted()).toEqual(unknownVersion);
+  });
+
   it('does not crash when getItem throws (blocked storage)', () => {
     const spy = vi.spyOn(window.localStorage, 'getItem').mockImplementation(() => {
       throw new Error('blocked');

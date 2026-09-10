@@ -19,7 +19,16 @@ describe('useFoodSearch hook', () => {
 
   it('should return exact match for food name', async () => {
     mockFoodDB.foodDB.items = [
-      { id: '001', name: 'Manzana', category: 'fruit', energyKcal: 52, proteinG: 0.3, carbsG: 14, fatG: 0.2, unit: '100g' },
+      {
+        id: '001',
+        name: 'Manzana',
+        category: 'fruit',
+        energyKcal: 52,
+        proteinG: 0.3,
+        carbsG: 14,
+        fatG: 0.2,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -36,8 +45,26 @@ describe('useFoodSearch hook', () => {
 
   it('should return partial matches', async () => {
     mockFoodDB.foodDB.items = [
-      { id: '002', name: 'Arroz integral', category: 'grain', energyKcal: 111, proteinG: 2.6, carbsG: 23, fatG: 0.9, unit: '100g' },
-      { id: '003', name: 'Arroz blanco', category: 'grain', energyKcal: 130, proteinG: 2.7, carbsG: 28, fatG: 0.3, unit: '100g' },
+      {
+        id: '002',
+        name: 'Arroz integral',
+        category: 'grain',
+        energyKcal: 111,
+        proteinG: 2.6,
+        carbsG: 23,
+        fatG: 0.9,
+        unit: '100g',
+      },
+      {
+        id: '003',
+        name: 'Arroz blanco',
+        category: 'grain',
+        energyKcal: 130,
+        proteinG: 2.7,
+        carbsG: 28,
+        fatG: 0.3,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -53,7 +80,16 @@ describe('useFoodSearch hook', () => {
 
   it('should return exact match by barcode', async () => {
     mockFoodDB.foodDB.items = [
-      { id: '7501055300014', name: 'Galletas Maria', category: 'snack', energyKcal: 450, proteinG: 6, carbsG: 70, fatG: 15, unit: '100g' },
+      {
+        id: '7501055300014',
+        name: 'Galletas Maria',
+        category: 'snack',
+        energyKcal: 450,
+        proteinG: 6,
+        carbsG: 70,
+        fatG: 15,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -70,7 +106,16 @@ describe('useFoodSearch hook', () => {
 
   it('should show not found when no match', async () => {
     mockFoodDB.foodDB.items = [
-      { id: '001', name: 'Manzana', category: 'fruit', energyKcal: 52, proteinG: 0.3, carbsG: 14, fatG: 0.2, unit: '100g' },
+      {
+        id: '001',
+        name: 'Manzana',
+        category: 'fruit',
+        energyKcal: 52,
+        proteinG: 0.3,
+        carbsG: 14,
+        fatG: 0.2,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -88,7 +133,16 @@ describe('useFoodSearch hook', () => {
     const p = new Promise<FoodItem[]>((resolve) => {
       setTimeout(() => {
         resolve([
-          { id: '001', name: 'Manzana', category: 'fruit', energyKcal: 52, proteinG: 0.3, carbsG: 14, fatG: 0.2, unit: '100g' },
+          {
+            id: '001',
+            name: 'Manzana',
+            category: 'fruit',
+            energyKcal: 52,
+            proteinG: 0.3,
+            carbsG: 14,
+            fatG: 0.2,
+            unit: '100g',
+          },
         ]);
       }, 30);
     });
@@ -112,7 +166,9 @@ describe('useFoodSearch hook', () => {
     const onRejection = () => {};
     process.on('unhandledRejection', onRejection);
 
-    mockFoodDB.foodDB.items = Promise.reject(new Error('Failed to load food data')) as unknown as FoodItem[];
+    mockFoodDB.foodDB.items = Promise.reject(
+      new Error('Failed to load food data'),
+    ) as unknown as FoodItem[];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
     const { result } = renderHook(() => useFoodSearch());
@@ -131,7 +187,16 @@ describe('useFoodSearch hook', () => {
 
   it('should handle case-insensitivity in search', async () => {
     mockFoodDB.foodDB.items = [
-      { id: '001', name: 'Manzana', category: 'fruit', energyKcal: 52, proteinG: 0.3, carbsG: 14, fatG: 0.2, unit: '100g' },
+      {
+        id: '001',
+        name: 'Manzana',
+        category: 'fruit',
+        energyKcal: 52,
+        proteinG: 0.3,
+        carbsG: 14,
+        fatG: 0.2,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -147,7 +212,16 @@ describe('useFoodSearch hook', () => {
 
   it('should handle diacritics in search', async () => {
     mockFoodDB.foodDB.items = [
-      { id: '002', name: 'Jalapeño', category: 'vegetable', energyKcal: 30, proteinG: 1.5, carbsG: 7, fatG: 0.2, unit: '100g' },
+      {
+        id: '002',
+        name: 'Jalapeño',
+        category: 'vegetable',
+        energyKcal: 30,
+        proteinG: 1.5,
+        carbsG: 7,
+        fatG: 0.2,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -164,9 +238,36 @@ describe('useFoodSearch hook', () => {
 
   it('should filter by category when provided', async () => {
     mockFoodDB.foodDB.items = [
-      { id: '001', name: 'Manzana', category: 'fruit', energyKcal: 52, proteinG: 0.3, carbsG: 14, fatG: 0.2, unit: '100g' },
-      { id: '002', name: 'Pechuga de pollo', category: 'protein', energyKcal: 165, proteinG: 31, carbsG: 0, fatG: 3.6, unit: '100g' },
-      { id: '003', name: 'Frambuesa', category: 'fruit', energyKcal: 52, proteinG: 1.2, carbsG: 12, fatG: 0.7, unit: '100g' },
+      {
+        id: '001',
+        name: 'Manzana',
+        category: 'fruit',
+        energyKcal: 52,
+        proteinG: 0.3,
+        carbsG: 14,
+        fatG: 0.2,
+        unit: '100g',
+      },
+      {
+        id: '002',
+        name: 'Pechuga de pollo',
+        category: 'protein',
+        energyKcal: 165,
+        proteinG: 31,
+        carbsG: 0,
+        fatG: 3.6,
+        unit: '100g',
+      },
+      {
+        id: '003',
+        name: 'Frambuesa',
+        category: 'fruit',
+        energyKcal: 52,
+        proteinG: 1.2,
+        carbsG: 12,
+        fatG: 0.7,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -188,7 +289,16 @@ describe('useFoodSearch hook', () => {
 
   it('should not treat invalid barcode format as barcode match', async () => {
     mockFoodDB.foodDB.items = [
-      { id: 'invalid123', name: 'Some Food', category: 'snack', carbsG: 10, proteinG: 5, fatG: 5, energyKcal: 100, unit: '100g' },
+      {
+        id: 'invalid123',
+        name: 'Some Food',
+        category: 'snack',
+        carbsG: 10,
+        proteinG: 5,
+        fatG: 5,
+        energyKcal: 100,
+        unit: '100g',
+      },
     ];
 
     const { useFoodSearch } = await import('../src/hooks/useFoodSearch');
@@ -205,29 +315,67 @@ describe('useFoodSearch hook', () => {
 
 describe('convertToPer100g utility', () => {
   it('should return unchanged item when unit is 100g', () => {
-    const item: FoodItem = { id: '001', name: 'Manzana', category: 'fruit', energyKcal: 52, proteinG: 0.3, carbsG: 14, fatG: 0.2, unit: '100g' };
+    const item: FoodItem = {
+      id: '001',
+      name: 'Manzana',
+      category: 'fruit',
+      energyKcal: 52,
+      proteinG: 0.3,
+      carbsG: 14,
+      fatG: 0.2,
+      unit: '100g',
+    };
     const converted = convertToPer100g(item);
     expect(converted).toEqual(item);
     expect(converted).not.toBe(item);
   });
 
-  it('should convert nutrients per piece to per 100g when unitPer100G provided', () => {
-    const item: FoodItem = { id: '011', name: 'Huevo (pieza)', category: 'protein', energyKcal: 78, proteinG: 6.5, carbsG: 0.6, fatG: 5.5, unit: 'piece', unitPer100G: 2 };
+  it('characterizes unsafe serving arithmetic without NutritionBasis: unitPer100G converts per piece to per 100g', () => {
+    const item: FoodItem = {
+      id: '011',
+      name: 'Huevo (pieza)',
+      category: 'protein',
+      energyKcal: 78,
+      proteinG: 6.5,
+      carbsG: 0.6,
+      fatG: 5.5,
+      unit: 'piece',
+      unitPer100G: 2,
+    };
     const converted = convertToPer100g(item);
     expect(converted.unit).toBe('100g');
     expect(converted.unitPer100G).toBe(1);
     expect(converted.energyKcal).toBeCloseTo(78 * 2);
   });
 
-  it('should handle unit per 100g with fractional unitPer100G', () => {
-    const item: FoodItem = { id: '012', name: 'Rebanada de pan blanco', category: 'grain', energyKcal: 80, proteinG: 2.7, carbsG: 14.7, fatG: 1.0, unit: 'slice', unitPer100G: 3.33 };
+  it('characterizes unsafe fractional serving arithmetic without NutritionBasis', () => {
+    const item: FoodItem = {
+      id: '012',
+      name: 'Rebanada de pan blanco',
+      category: 'grain',
+      energyKcal: 80,
+      proteinG: 2.7,
+      carbsG: 14.7,
+      fatG: 1.0,
+      unit: 'slice',
+      unitPer100G: 3.33,
+    };
     const converted = convertToPer100g(item);
     expect(converted.unit).toBe('100g');
     expect(converted.energyKcal).toBeCloseTo(80 * 3.33);
   });
 
   it('should return unchanged item when unitPer100G missing', () => {
-    const item: FoodItem = { id: '002', name: 'Arroz blanco', category: 'grain', energyKcal: 130, proteinG: 2.7, carbsG: 28, fatG: 0.3, unit: '100g' };
+    const item: FoodItem = {
+      id: '002',
+      name: 'Arroz blanco',
+      category: 'grain',
+      energyKcal: 130,
+      proteinG: 2.7,
+      carbsG: 28,
+      fatG: 0.3,
+      unit: '100g',
+    };
     const converted = convertToPer100g(item);
     expect(converted).toEqual(item);
     expect(converted).not.toBe(item);

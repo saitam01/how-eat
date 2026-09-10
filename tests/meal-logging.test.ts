@@ -34,10 +34,43 @@ describe('useMealLog hook', () => {
     });
   });
 
+  it('characterizes unsafe date-unscoped v1 totals: timestamps from different local dates combine', async () => {
+    const entries = [
+      {
+        id: 'today',
+        foodId: 'apple',
+        amount: 1,
+        energyKcal: 52,
+        proteinG: 0.3,
+        carbsG: 14,
+        fatG: 0.2,
+        timestamp: Date.now(),
+      },
+      {
+        id: 'older',
+        foodId: 'apple',
+        amount: 1,
+        energyKcal: 52,
+        proteinG: 0.3,
+        carbsG: 14,
+        fatG: 0.2,
+        timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
+      },
+    ];
+    localStorage.setItem('how-eat-meals:v1', JSON.stringify(entries));
+    const { useMealLog } = await import('../src/hooks/useMealLog');
+    const { result } = renderHook(() =>
+      useMealLog({ energyTargetKcal: 2000, proteinPct: 20, carbsPct: 50, fatPct: 30 }),
+    );
+    expect(result.current.entries).toHaveLength(2);
+    expect(result.current.totals.energyKcal).toBe(104);
+  });
+
   it('should add food with default amount and compute nutrients correctly', async () => {
     const { foodDB } = await import('../src/lib/food-db');
     foodDB.items = [
-      {        id: 'apple',
+      {
+        id: 'apple',
         name: 'Apple',
         category: 'fruit',
         energyKcal: 52,
@@ -120,7 +153,8 @@ describe('useMealLog hook', () => {
     it('should reject zero or negative amount', async () => {
       const { foodDB } = await import('../src/lib/food-db');
       foodDB.items = [
-        {          id: 'apple',
+        {
+          id: 'apple',
           name: 'Apple',
           category: 'fruit',
           energyKcal: 52,
@@ -162,7 +196,8 @@ describe('useMealLog hook', () => {
       vi.useFakeTimers();
       const { foodDB } = await import('../src/lib/food-db');
       foodDB.items = [
-        {          id: 'apple',
+        {
+          id: 'apple',
           name: 'Apple',
           category: 'fruit',
           energyKcal: 52,
@@ -219,7 +254,8 @@ describe('useMealLog hook', () => {
     it('should handle large amounts without overflow', async () => {
       const { foodDB } = await import('../src/lib/food-db');
       foodDB.items = [
-        {          id: 'apple',
+        {
+          id: 'apple',
           name: 'Apple',
           category: 'fruit',
           energyKcal: 52,
@@ -265,7 +301,8 @@ describe('useMealLog hook', () => {
     it('should update progress when goal changes mid-day', async () => {
       const { foodDB } = await import('../src/lib/food-db');
       foodDB.items = [
-        {          id: 'apple',
+        {
+          id: 'apple',
           name: 'Apple',
           category: 'fruit',
           energyKcal: 52,

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { serializeParams, shareUrl, parseUrlParams, loadState } from '@/lib/url';
+import { savePersisted } from '@/lib/storage';
 import type { AppState } from '@/types';
 
 const state: AppState = {
@@ -31,7 +32,7 @@ const expectedPartial = {
 };
 
 describe('serializeParams', () => {
-  it('serializes a full state including macros, preset and bodyFatPct', () => {
+  it('characterizes privacy debt: serializes anthropometric state into the query string', () => {
     const qs = serializeParams(state);
     expect(qs).toBe(
       's=female&a=45&h=165&w=60&b=22&ac=light&g=lose&p=40&c=30&f=30&pr=alta_proteina',
@@ -48,6 +49,17 @@ describe('serializeParams', () => {
 });
 
 describe('shareUrl', () => {
+  it('characterizes privacy debt: recognized URL fields override persisted/default state', () => {
+    savePersisted(state);
+    window.history.replaceState({}, '', '/?a=40');
+    try {
+      const { state: loaded } = loadState();
+      expect(loaded.inputs.age).toBe(40);
+    } finally {
+      window.history.replaceState({}, '', '/');
+    }
+  });
+
   it('round-trips through parseUrlParams (exact, incl macros+preset)', () => {
     const url = shareUrl(state);
     const search = url.includes('?') ? url.slice(url.indexOf('?')) : '';
