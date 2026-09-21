@@ -32,6 +32,7 @@ export interface MealEntry {
   carbsG: number;
   fatG: number;
   timestamp: number; // epoch ms when added
+  date: string; // local YYYY-MM-DD
 }
 
 export interface MacroGoal {

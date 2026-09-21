@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { foodDB } from '../lib/food-db';
+import { todayLocal } from '../lib/date';
 import type { MealEntry, MacroGoal } from '../lib/types';
 
 /**
@@ -102,6 +103,7 @@ export function useMealLog(goal: MacroGoal) {
       carbsG: foodItem.carbsG * amount,
       fatG: foodItem.fatG * amount,
       timestamp: Date.now(),
+      date: todayLocal(),
     };
     setEntriesState((prev) => [...prev, newEntry]);
   }, []);

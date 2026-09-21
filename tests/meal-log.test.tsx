@@ -19,6 +19,7 @@ const mockEntries: MealEntry[] = [
     carbsG: 28,
     fatG: 0.4,
     timestamp: Date.now(),
+    date: '2026-09-20',
   },
   {
     id: '2',
@@ -29,6 +30,7 @@ const mockEntries: MealEntry[] = [
     carbsG: 0,
     fatG: 3.6,
     timestamp: Date.now(),
+    date: '2026-09-20',
   },
 ];
 
