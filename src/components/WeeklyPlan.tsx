@@ -1,5 +1,6 @@
 import type { MacroGoal, MealEntry } from '@/lib/types';
 import { foodDB } from '@/lib/food-db';
+import { entriesForDate, todayLocal } from '@/lib/date';
 import i18n from '@/i18n/es.json';
 
 export function WeeklyPlan({
@@ -9,8 +10,10 @@ export function WeeklyPlan({
   goal: MacroGoal;
   mealLogEntries: MealEntry[];
 }) {
-  // Calculate current totals from meal log
-  const currentTotals = mealLogEntries.reduce(
+  const todayEntries = entriesForDate(mealLogEntries, todayLocal());
+
+  // Calculate current totals from today's meal log.
+  const currentTotals = todayEntries.reduce(
     (acc, entry) => ({
       energyKcal: acc.energyKcal + entry.energyKcal,
       proteinG: acc.proteinG + entry.proteinG,
@@ -124,13 +127,13 @@ export function WeeklyPlan({
       {/* Base meals info */}
       <div className="rounded-lg border border-border bg-background p-4">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Base de comidas (diario)
+          Base de comidas (hoy)
         </h3>
-        {mealLogEntries.length === 0 ? (
+        {todayEntries.length === 0 ? (
           <p className="text-sm text-muted-foreground">{i18n.diaryCTA}</p>
         ) : (
           <div className="space-y-2">
-            {mealLogEntries
+            {todayEntries
               .map((entry) => {
                 const food = foodDB.items.find((f) => f.id === entry.foodId);
                 if (!food) return null;
@@ -152,8 +155,11 @@ export function WeeklyPlan({
         )}
       </div>
 
-      {/* Weekly meal plan */}
+      {/* Reusable daily meal template */}
       <div className="space-y-4">
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Plantilla diaria (repetí cada día)
+        </h3>
         {days.map((day, dayIndex) => (
           <div key={dayIndex} className="rounded-lg border border-border bg-background p-4">
             <h3 className="mb-2 text-sm font-semibold">{day}</h3>
@@ -260,26 +266,26 @@ export function WeeklyPlan({
         ))}
       </div>
 
-      {/* Weekly totals summary */}
+      {/* Daily target and projection */}
       <div className="rounded-lg border border-border bg-background p-4">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Resumen semanal (promedio diario)
+          Objetivo diario y proyección
         </h3>
         <div className="grid grid-cols-4 gap-2 text-xs">
           <div>
-            <span className="text-muted-foreground">Energía</span>
+            <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
             {formatUp(currentTotals.energyKcal + remaining.energyKcal)} kcal
           </div>
           <div>
-            <span className="text-muted-foreground">Proteína</span>
+            <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
             {formatUp(currentTotals.proteinG + remaining.proteinG)}g
           </div>
           <div>
-            <span className="text-muted-foreground">Carbos</span>
+            <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
             {formatUp(currentTotals.carbsG + remaining.carbsG)}g
           </div>
           <div>
-            <span className="text-muted-foreground">Grasa</span>
+            <span className="text-muted-foreground">{i18n.mealLogFat}</span>
             {formatUp(currentTotals.fatG + remaining.fatG)}g
           </div>
         </div>

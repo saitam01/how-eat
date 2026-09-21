@@ -7,6 +7,11 @@ interface MealLogProps {
   totals: DailyTotals;
   progress: { energy: number; protein: number; carbs: number; fat: number };
   goal: MacroGoal;
+  selectedDate: string;
+  isToday: boolean;
+  onPrevDay: () => void;
+  onNextDay: () => void;
+  onToday: () => void;
   onRemove: (id: string) => void;
   onClear: () => void;
 }
@@ -77,17 +82,63 @@ function ProgressBar({
   );
 }
 
-export const MealLog = ({ entries, totals, progress, goal, onRemove, onClear }: MealLogProps) => {
+export const MealLog = ({
+  entries,
+  totals,
+  progress,
+  goal,
+  selectedDate,
+  isToday,
+  onPrevDay,
+  onNextDay,
+  onToday,
+  onRemove,
+  onClear,
+}: MealLogProps) => {
+  const dayNavigation = (
+    <div className="flex items-center justify-between gap-2" aria-label={selectedDate}>
+      <button
+        type="button"
+        onClick={onPrevDay}
+        className="rounded-md px-2 py-1 text-sm hover:bg-muted"
+        aria-label={i18n.dayPrev}
+      >
+        ‹
+      </button>
+      <span className="text-sm font-medium tabular-nums">{selectedDate}</span>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={onNextDay}
+          disabled={isToday}
+          className="rounded-md px-2 py-1 text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          aria-label={i18n.dayNext}
+        >
+          ›
+        </button>
+        {!isToday && (
+          <button type="button" onClick={onToday} className="rounded-md px-2 py-1 text-sm hover:bg-muted">
+            {i18n.dayToday}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   if (entries.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border p-6 text-center">
-        <p className="text-sm text-muted-foreground">{i18n.mealLogEmpty}</p>
+      <div className="space-y-4">
+        {dayNavigation}
+        <div className="rounded-lg border border-dashed border-border p-6 text-center">
+          <p className="text-sm text-muted-foreground">{i18n.mealLogEmptyDay}</p>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
+      {dayNavigation}
       {/* Progress bars */}
       <div className="space-y-3 rounded-lg border border-border bg-background p-4 shadow-sm">
         <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -177,9 +228,9 @@ export const MealLog = ({ entries, totals, progress, goal, onRemove, onClear }: 
       <button
         onClick={onClear}
         className="w-full rounded-md border border-destructive py-2 text-sm text-destructive transition-colors hover:bg-destructive/10"
-        aria-label={i18n.mealLogClear}
+        aria-label={i18n.mealLogClearDay}
       >
-        {i18n.mealLogClear}
+        {i18n.mealLogClearDay}
       </button>
     </div>
   );
