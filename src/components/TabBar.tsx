@@ -1,6 +1,6 @@
 import i18n from '@/i18n/es.json';
 
-export type TabKey = 'calculator' | 'diario' | 'plan';
+export type TabKey = 'calculator' | 'diario' | 'plan' | 'progreso';
 
 interface TabBarProps {
   active: TabKey;
@@ -11,6 +11,7 @@ const tabs: { key: TabKey; label: string }[] = [
   { key: 'calculator', label: i18n.tabCalculator },
   { key: 'diario', label: i18n.tabDiario },
   { key: 'plan', label: i18n.tabPlan },
+  { key: 'progreso', label: i18n.tabProgress },
 ];
 
 export function TabBar({ active, onChange }: TabBarProps) {
