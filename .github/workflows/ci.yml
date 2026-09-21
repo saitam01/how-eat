@@ -7,7 +7,7 @@ on:
 
 jobs:
   verify:
-    name: Typecheck, lint, test, and build
+    name: Typecheck, lint, test, coverage, and build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,4 +19,5 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
+      - run: npx vitest run --coverage
       - run: npm run build

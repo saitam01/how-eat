@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { serializeParams, shareUrl, parseUrlParams, loadState } from '@/lib/url';
 import { savePersisted } from '@/lib/storage';
 import type { AppState } from '@/types';
@@ -49,6 +49,15 @@ describe('serializeParams', () => {
 });
 
 describe('shareUrl', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('serializes without a browser global', () => {
+    vi.stubGlobal('window', undefined);
+    expect(shareUrl(state)).toBe(`?${serializeParams(state)}`);
+  });
+
   it('characterizes privacy debt: recognized URL fields override persisted/default state', () => {
     savePersisted(state);
     window.history.replaceState({}, '', '/?a=40');
@@ -70,6 +79,10 @@ describe('shareUrl', () => {
 });
 
 describe('parseUrlParams', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('round-trips a serialized full state (exact)', () => {
     const { partial, invalid } = parseUrlParams('?' + serializeParams(state));
     expect(invalid).toBe(false);
@@ -102,12 +115,72 @@ describe('parseUrlParams', () => {
     expect(invalid).toBe(true);
     expect(partial.macros).toBeUndefined();
   });
+
+  it('flags invalid height, weight, and body-fat params without setting fields', () => {
+    for (const [param, field] of [
+      ['h=99', 'heightCm'],
+      ['w=29', 'weightKg'],
+      ['b=61', 'bodyFatPct'],
+    ] as const) {
+      const { partial, invalid } = parseUrlParams(`?${param}`);
+      expect(invalid).toBe(true);
+      expect(partial.inputs?.[field]).toBeUndefined();
+    }
+  });
+
+  it('flags invalid activity, goal, and preset params', () => {
+    for (const param of ['ac=bogus', 'g=bogus', 'pr=bogus']) {
+      const { invalid } = parseUrlParams(`?${param}`);
+      expect(invalid).toBe(true);
+    }
+  });
+
+  it('creates inputs when a valid field appears without sex', () => {
+    for (const [param, field, value] of [
+      ['h=165', 'heightCm', 165],
+      ['w=75', 'weightKg', 75],
+      ['b=20', 'bodyFatPct', 20],
+      ['ac=light', 'activity', 'light'],
+      ['g=maintain', 'goal', 'maintain'],
+    ] as const) {
+      const { partial, invalid } = parseUrlParams(`?${param}`);
+      expect(invalid).toBe(false);
+      expect(partial.inputs).toEqual({ [field]: value });
+    }
+  });
+
+  it('parses a valid preset without sex', () => {
+    const { partial, invalid } = parseUrlParams('?pr=keto');
+    expect(invalid).toBe(false);
+    expect(partial).toEqual({ preset: 'keto' });
+  });
+
+  it('uses an empty default search without a browser global', () => {
+    vi.stubGlobal('window', undefined);
+    expect(parseUrlParams()).toEqual({ partial: {}, invalid: false });
+  });
 });
 
 describe('loadState', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
   it('returns the default state when nothing is present and no invalid params', () => {
     const { state: loaded, invalidParams } = loadState();
     expect(invalidParams).toBe(false);
     expect(loaded.macros.proteinPct + loaded.macros.carbsPct + loaded.macros.fatPct).toBe(100);
+  });
+
+  it('keeps a persisted custom preset when its macros match no preset', () => {
+    savePersisted({
+      ...state,
+      macros: { proteinPct: 25, carbsPct: 45, fatPct: 30 },
+      preset: 'personalizado',
+    });
+
+    const { state: loaded } = loadState();
+    expect(loaded.macros).toEqual({ proteinPct: 25, carbsPct: 45, fatPct: 30 });
+    expect(loaded.preset).toBe('personalizado');
   });
 });
