@@ -7,7 +7,6 @@ agents.md
 # Node
 node_modules/
 npm-debug.log*
-package-lock.json
 
 # Build output
 dist/
