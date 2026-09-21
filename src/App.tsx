@@ -16,6 +16,7 @@ import { Disclaimer } from '@/components/Disclaimer';
 import { TabBar, type TabKey } from '@/components/TabBar';
 import { Toaster } from '@/components/ui/toast';
 import { toast } from '@/lib/toast';
+import { todayLocal } from '@/lib/date';
 import i18n from '@/i18n/es.json';
 
 export function App() {
@@ -103,10 +104,15 @@ export function App() {
 
                 <aside className="space-y-4 md:sticky md:top-6 md:self-start">
                   <MealLog
-                    entries={mealLog.entries}
+                    entries={mealLog.dayEntries}
                     totals={mealLog.totals}
                     progress={mealLog.progress}
                     goal={goal}
+                    selectedDate={mealLog.selectedDate}
+                    isToday={mealLog.isToday}
+                    onPrevDay={mealLog.goToPrevDay}
+                    onNextDay={mealLog.goToNextDay}
+                    onToday={() => mealLog.goToDate(todayLocal())}
                     onRemove={mealLog.removeEntry}
                     onClear={mealLog.clear}
                   />

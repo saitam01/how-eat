@@ -54,6 +54,11 @@ describe('MealLog', () => {
     totals: mockTotals,
     progress: mockProgress,
     goal,
+    selectedDate: '2026-09-20',
+    isToday: true,
+    onPrevDay: vi.fn(),
+    onNextDay: vi.fn(),
+    onToday: vi.fn(),
     onRemove: vi.fn(),
     onClear: vi.fn(),
   };
@@ -91,10 +96,22 @@ describe('MealLog', () => {
   it('calls onClear when clear button is clicked', () => {
     render(<MealLog {...defaultProps} />);
 
-    const clearButton = screen.getByRole('button', { name: /borrar todo/i });
+    const clearButton = screen.getByRole('button', { name: /borrar día/i });
     fireEvent.click(clearButton);
 
     expect(defaultProps.onClear).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders day navigation controls and calls their handlers', () => {
+    render(<MealLog {...defaultProps} isToday={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: /día anterior/i }));
+    fireEvent.click(screen.getByRole('button', { name: /día siguiente/i }));
+    fireEvent.click(screen.getByRole('button', { name: /^hoy$/i }));
+
+    expect(defaultProps.onPrevDay).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onNextDay).toHaveBeenCalledTimes(1);
+    expect(defaultProps.onToday).toHaveBeenCalledTimes(1);
   });
 
   it('shows progress bars with correct percentages', () => {

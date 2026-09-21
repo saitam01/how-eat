@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import type { MacroGoal } from '../src/lib/types';
+import { addDays, todayLocal } from '../src/lib/date';
 
 describe('useMealLog hook', () => {
   beforeEach(() => {
@@ -34,7 +35,8 @@ describe('useMealLog hook', () => {
     });
   });
 
-  it('characterizes unsafe date-unscoped v1 totals: timestamps from different local dates combine', async () => {
+  it('scopes day entries and totals to the selected date', async () => {
+    const today = todayLocal();
     const entries = [
       {
         id: 'today',
@@ -45,6 +47,7 @@ describe('useMealLog hook', () => {
         carbsG: 14,
         fatG: 0.2,
         timestamp: Date.now(),
+        date: today,
       },
       {
         id: 'older',
@@ -55,15 +58,71 @@ describe('useMealLog hook', () => {
         carbsG: 14,
         fatG: 0.2,
         timestamp: Date.now() - 2 * 24 * 60 * 60 * 1000,
+        date: addDays(today, -2),
       },
     ];
-    localStorage.setItem('how-eat-meals:v1', JSON.stringify(entries));
+    localStorage.setItem('how-eat-meals:v2', JSON.stringify(entries));
     const { useMealLog } = await import('../src/hooks/useMealLog');
     const { result } = renderHook(() =>
       useMealLog({ energyTargetKcal: 2000, proteinPct: 20, carbsPct: 50, fatPct: 30 }),
     );
+
     expect(result.current.entries).toHaveLength(2);
-    expect(result.current.totals.energyKcal).toBe(104);
+    expect(result.current.dayEntries).toEqual([entries[0]]);
+    expect(result.current.totals.energyKcal).toBe(52);
+  });
+
+  it('navigates between today and past dates without moving into the future', async () => {
+    const { useMealLog } = await import('../src/hooks/useMealLog');
+    const { result } = renderHook(() =>
+      useMealLog({ energyTargetKcal: 2000, proteinPct: 20, carbsPct: 50, fatPct: 30 }),
+    );
+    const today = todayLocal();
+
+    expect(result.current.selectedDate).toBe(today);
+    expect(result.current.isToday).toBe(true);
+
+    act(() => result.current.goToPrevDay());
+    expect(result.current.selectedDate).toBe(addDays(today, -1));
+    expect(result.current.isToday).toBe(false);
+
+    act(() => result.current.goToNextDay());
+    expect(result.current.selectedDate).toBe(today);
+    expect(result.current.isToday).toBe(true);
+
+    act(() => result.current.goToNextDay());
+    expect(result.current.selectedDate).toBe(today);
+
+    act(() => result.current.goToDate(addDays(today, -2)));
+    expect(result.current.selectedDate).toBe(addDays(today, -2));
+  });
+
+  it('clears only entries from the selected day', async () => {
+    const today = todayLocal();
+    const previousDay = addDays(today, -1);
+    localStorage.setItem(
+      'how-eat-meals:v2',
+      JSON.stringify([
+        {
+          id: 'today', foodId: 'apple', amount: 1, energyKcal: 52, proteinG: 0.3, carbsG: 14,
+          fatG: 0.2, timestamp: Date.now(), date: today,
+        },
+        {
+          id: 'previous', foodId: 'apple', amount: 1, energyKcal: 52, proteinG: 0.3, carbsG: 14,
+          fatG: 0.2, timestamp: Date.now(), date: previousDay,
+        },
+      ]),
+    );
+    const { useMealLog } = await import('../src/hooks/useMealLog');
+    const { result } = renderHook(() =>
+      useMealLog({ energyTargetKcal: 2000, proteinPct: 20, carbsPct: 50, fatPct: 30 }),
+    );
+
+    act(() => result.current.clear());
+
+    expect(result.current.entries).toHaveLength(1);
+    expect(result.current.entries[0].id).toBe('previous');
+    expect(result.current.dayEntries).toEqual([]);
   });
 
   it('should add food with default amount and compute nutrients correctly', async () => {
@@ -95,11 +154,7 @@ describe('useMealLog hook', () => {
       result.current.addEntry('apple', 1);
     });
 
-    // Debug: log entry and totals
     const entry = result.current.entries[0];
-    console.log('Entry:', entry);
-    console.log('Totals:', result.current.totals);
-    console.log('Progress:', result.current.progress);
 
     // Assert: entry added
     expect(result.current.entries).toHaveLength(1);

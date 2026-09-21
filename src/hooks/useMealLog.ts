@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { foodDB } from '../lib/food-db';
-import { todayLocal } from '../lib/date';
+import { addDays, entriesForDate, todayLocal } from '../lib/date';
+import { loadMealEntries, saveMealEntries } from '../lib/meal-storage';
 import type { MealEntry, MacroGoal } from '../lib/types';
 
 /**
@@ -9,18 +10,8 @@ import type { MealEntry, MacroGoal } from '../lib/types';
  * @returns Object with entries, totals, progress, and mutator functions.
  */
 export function useMealLog(goal: MacroGoal) {
-  // Initialize state from localStorage
-  const [entries, setEntriesState] = useState<MealEntry[]>(() => {
-    try {
-      const raw = window.localStorage.getItem('how-eat-meals:v1');
-      if (raw !== null) {
-        return JSON.parse(raw) as MealEntry[];
-      }
-    } catch {
-      /* blocked/missing → fall back to empty array */
-    }
-    return [];
-  });
+  const [entries, setEntriesState] = useState<MealEntry[]>(loadMealEntries);
+  const [selectedDate, setSelectedDate] = useState(todayLocal);
 
   // Persist entries to localStorage with debounce to prevent excessive writes
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -33,11 +24,7 @@ export function useMealLog(goal: MacroGoal) {
 
     // Set new timeout to save after 300ms debounce
     saveTimeoutRef.current = setTimeout(() => {
-      try {
-        window.localStorage.setItem('how-eat-meals:v1', JSON.stringify(entries));
-      } catch {
-        /* blocked/missing → in-memory only */
-      }
+      saveMealEntries(entries);
     }, 300);
 
     // Cleanup on unmount or before next effect run
@@ -48,8 +35,13 @@ export function useMealLog(goal: MacroGoal) {
     };
   }, [entries]);
 
+  const dayEntries = useMemo(
+    () => entriesForDate(entries, selectedDate),
+    [entries, selectedDate],
+  );
+
   const totals = useMemo(() => {
-    return entries.reduce(
+    return dayEntries.reduce(
       (acc: DailyTotals, entry: MealEntry) => ({
         energyKcal: acc.energyKcal + entry.energyKcal,
         proteinG: acc.proteinG + entry.proteinG,
@@ -63,7 +55,7 @@ export function useMealLog(goal: MacroGoal) {
         fatG: 0,
       },
     );
-  }, [entries]);
+  }, [dayEntries]);
 
   const progress = useMemo(() => {
     if (goal.energyTargetKcal <= 0) {
@@ -103,26 +95,46 @@ export function useMealLog(goal: MacroGoal) {
       carbsG: foodItem.carbsG * amount,
       fatG: foodItem.fatG * amount,
       timestamp: Date.now(),
-      date: todayLocal(),
+      date: selectedDate,
     };
     setEntriesState((prev) => [...prev, newEntry]);
-  }, []);
+  }, [selectedDate]);
 
   const removeEntry = useCallback((id: string) => {
     setEntriesState((prev) => prev.filter((entry) => entry.id !== id));
   }, []);
 
   const clear = useCallback(() => {
-    setEntriesState([]);
+    setEntriesState((prev) => prev.filter((entry) => entry.date !== selectedDate));
+  }, [selectedDate]);
+
+  const goToDate = useCallback((date: string) => {
+    setSelectedDate(date);
   }, []);
+
+  const goToPrevDay = useCallback(() => {
+    setSelectedDate((date) => addDays(date, -1));
+  }, []);
+
+  const goToNextDay = useCallback(() => {
+    setSelectedDate((date) => (date >= todayLocal() ? date : addDays(date, 1)));
+  }, []);
+
+  const isToday = selectedDate === todayLocal();
 
   return {
     entries,
+    selectedDate,
+    dayEntries,
     totals,
     progress,
     addEntry,
     removeEntry,
     clear,
+    goToDate,
+    goToPrevDay,
+    goToNextDay,
+    isToday,
   };
 }
 
