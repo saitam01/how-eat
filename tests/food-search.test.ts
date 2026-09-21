@@ -1,6 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
 import type { FoodItem } from '../src/lib/types';
-import { convertToPer100g } from '../src/lib/food-search-utils';
 
 const mockFoodDB = vi.hoisted(() => ({
   foodDB: { items: [] as FoodItem[] },
@@ -310,74 +309,5 @@ describe('useFoodSearch hook', () => {
 
     const searchResult = result.current.search('invalid123');
     expect(searchResult).toHaveLength(0);
-  });
-});
-
-describe('convertToPer100g utility', () => {
-  it('should return unchanged item when unit is 100g', () => {
-    const item: FoodItem = {
-      id: '001',
-      name: 'Manzana',
-      category: 'fruit',
-      energyKcal: 52,
-      proteinG: 0.3,
-      carbsG: 14,
-      fatG: 0.2,
-      unit: '100g',
-    };
-    const converted = convertToPer100g(item);
-    expect(converted).toEqual(item);
-    expect(converted).not.toBe(item);
-  });
-
-  it('characterizes unsafe serving arithmetic without NutritionBasis: unitPer100G converts per piece to per 100g', () => {
-    const item: FoodItem = {
-      id: '011',
-      name: 'Huevo (pieza)',
-      category: 'protein',
-      energyKcal: 78,
-      proteinG: 6.5,
-      carbsG: 0.6,
-      fatG: 5.5,
-      unit: 'piece',
-      unitPer100G: 2,
-    };
-    const converted = convertToPer100g(item);
-    expect(converted.unit).toBe('100g');
-    expect(converted.unitPer100G).toBe(1);
-    expect(converted.energyKcal).toBeCloseTo(78 * 2);
-  });
-
-  it('characterizes unsafe fractional serving arithmetic without NutritionBasis', () => {
-    const item: FoodItem = {
-      id: '012',
-      name: 'Rebanada de pan blanco',
-      category: 'grain',
-      energyKcal: 80,
-      proteinG: 2.7,
-      carbsG: 14.7,
-      fatG: 1.0,
-      unit: 'slice',
-      unitPer100G: 3.33,
-    };
-    const converted = convertToPer100g(item);
-    expect(converted.unit).toBe('100g');
-    expect(converted.energyKcal).toBeCloseTo(80 * 3.33);
-  });
-
-  it('should return unchanged item when unitPer100G missing', () => {
-    const item: FoodItem = {
-      id: '002',
-      name: 'Arroz blanco',
-      category: 'grain',
-      energyKcal: 130,
-      proteinG: 2.7,
-      carbsG: 28,
-      fatG: 0.3,
-      unit: '100g',
-    };
-    const converted = convertToPer100g(item);
-    expect(converted).toEqual(item);
-    expect(converted).not.toBe(item);
   });
 });

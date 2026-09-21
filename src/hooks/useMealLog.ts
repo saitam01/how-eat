@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { foodDB } from '../lib/food-db';
 import type { MealEntry, MacroGoal } from '../lib/types';
 
-console.log('useMealLog: foodDB.items:', foodDB.items);
-
 /**
  * Hook to manage meal logging state.
  * @param goal - The macro goal from the calculator.
@@ -89,7 +87,6 @@ export function useMealLog(goal: MacroGoal) {
     }
     // Find the food item in the food database
     const foodItem = foodDB.items.find((item) => item.id === foodId);
-    console.log('useMealLog: Looking for foodId:', foodId, 'found:', foodItem);
     if (!foodItem) {
       console.warn(`Food item with id ${foodId} not found`);
       return;

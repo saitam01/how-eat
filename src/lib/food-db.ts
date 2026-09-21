@@ -14,7 +14,7 @@ const foodItems: FoodItem[] = [
   },
   {
     id: 'p02',
-    name: 'Peito de pavo',
+    name: 'Pechuga de pavo',
     category: 'protein',
     energyKcal: 104,
     proteinG: 22,
