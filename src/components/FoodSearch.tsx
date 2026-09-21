@@ -110,7 +110,7 @@ export function FoodSearch({ onSelect }: FoodSearchProps) {
       {!loading && data && results.length === 0 && (query || activeCategory) && (
         <p className="py-4 text-center text-sm text-muted-foreground">
           {i18n.searchNoResults}
-          {query && ` para "${query}"`}
+          {query && ` ${i18n.searchNoResultsFor.replace('{query}', query)}`}
         </p>
       )}
     </div>

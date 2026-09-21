@@ -142,7 +142,7 @@ export const MealLog = ({
       {/* Progress bars */}
       <div className="space-y-3 rounded-lg border border-border bg-background p-4 shadow-sm">
         <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Progreso diario
+          {i18n.mealLogDailyProgress}
         </h3>
         <ProgressBar
           label={i18n.mealLogEnergy}

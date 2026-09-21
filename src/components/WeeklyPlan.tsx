@@ -47,7 +47,7 @@ export function WeeklyPlan({
   };
 
   // Days of the week
-  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  const days = i18n.planDays;
 
   // Format number with one decimal, rounded up
   const formatUp = (value: number): string => {
@@ -109,10 +109,10 @@ export function WeeklyPlan({
   // Format suggestion string for a meal
   const formatMealSuggestion = (data: typeof mealData.breakfast): string => {
     const parts: string[] = [];
-    if (data.proteinGrams > 0) parts.push(`${Math.round(data.proteinGrams)}g de pechuga de pollo`);
-    if (data.carbsGrams > 0) parts.push(`${Math.round(data.carbsGrams)}g de arroz integral`);
-    if (data.fatML > 0) parts.push(`${Math.round(data.fatML)}ml de aceite de oliva`);
-    return parts.length > 0 ? parts.join(', ') : 'Ninguno';
+    if (data.proteinGrams > 0) parts.push(`${Math.round(data.proteinGrams)}${i18n.planSuggestionProtein}`);
+    if (data.carbsGrams > 0) parts.push(`${Math.round(data.carbsGrams)}${i18n.planSuggestionCarbs}`);
+    if (data.fatML > 0) parts.push(`${Math.round(data.fatML)}${i18n.planSuggestionFat}`);
+    return parts.length > 0 ? parts.join(', ') : i18n.planNone;
   };
 
   // Pre-format the suggestions to avoid complex JSX
@@ -127,7 +127,7 @@ export function WeeklyPlan({
       {/* Base meals info */}
       <div className="rounded-lg border border-border bg-background p-4">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Base de comidas (hoy)
+          {i18n.planBaseMealsToday}
         </h3>
         {todayEntries.length === 0 ? (
           <p className="text-sm text-muted-foreground">{i18n.diaryCTA}</p>
@@ -158,7 +158,7 @@ export function WeeklyPlan({
       {/* Reusable daily meal template */}
       <div className="space-y-4">
         <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Plantilla diaria (repetí cada día)
+          {i18n.planDailyTemplate}
         </h3>
         {days.map((day, dayIndex) => (
           <div key={dayIndex} className="rounded-lg border border-border bg-background p-4">
@@ -167,32 +167,30 @@ export function WeeklyPlan({
             {/* Breakfast */}
             <div className="mb-4 pt-2 border-t border-border">
               <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Desayuno
+                {i18n.mealBreakfast}
               </h4>
               <div className="space-y-2">
                 <div className="grid grid-cols-4 gap-1 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Energía</span>
+                    <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
                     {formatUp(dailyRemaining.energyKcal * mealRatios.breakfast)} kcal
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Proteína</span>
+                    <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
                     {formatUp(dailyRemaining.proteinG * mealRatios.breakfast)}g
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Carbos</span>
+                    <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
                     {formatUp(dailyRemaining.carbsG * mealRatios.breakfast)}g
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Grasa</span>
+                    <span className="text-muted-foreground">{i18n.mealLogFat}</span>
                     {formatUp(dailyRemaining.fatG * mealRatios.breakfast)}g
                   </div>
                 </div>
                 <div className="mt-1">
-                  <p className="text-xs text-muted-foreground">Sugerido: {breakfastSuggestion}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Bebidas: Té sin azúcar o Café negro (sin límite)
-                  </p>
+                  <p className="text-xs text-muted-foreground">{i18n.planSuggested} {breakfastSuggestion}</p>
+                  <p className="text-xs text-muted-foreground">{i18n.planBeverages}</p>
                 </div>
               </div>
             </div>
@@ -200,32 +198,30 @@ export function WeeklyPlan({
             {/* Lunch */}
             <div className="mb-4 pt-2 border-t border-border">
               <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Almuerzo
+                {i18n.mealLunch}
               </h4>
               <div className="space-y-2">
                 <div className="grid grid-cols-4 gap-1 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Energía</span>
+                    <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
                     {formatUp(dailyRemaining.energyKcal * mealRatios.lunch)} kcal
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Proteína</span>
+                    <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
                     {formatUp(dailyRemaining.proteinG * mealRatios.lunch)}g
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Carbos</span>
+                    <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
                     {formatUp(dailyRemaining.carbsG * mealRatios.lunch)}g
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Grasa</span>
+                    <span className="text-muted-foreground">{i18n.mealLogFat}</span>
                     {formatUp(dailyRemaining.fatG * mealRatios.lunch)}g
                   </div>
                 </div>
                 <div className="mt-1">
-                  <p className="text-xs text-muted-foreground">Sugerido: {lunchSuggestion}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Bebidas: Té sin azúcar o Café negro (sin límite)
-                  </p>
+                  <p className="text-xs text-muted-foreground">{i18n.planSuggested} {lunchSuggestion}</p>
+                  <p className="text-xs text-muted-foreground">{i18n.planBeverages}</p>
                 </div>
               </div>
             </div>
@@ -233,32 +229,30 @@ export function WeeklyPlan({
             {/* Dinner */}
             <div className="pt-2 border-t border-border">
               <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Cena
+                {i18n.mealDinner}
               </h4>
               <div className="space-y-2">
                 <div className="grid grid-cols-4 gap-1 text-xs">
                   <div>
-                    <span className="text-muted-foreground">Energía</span>
+                    <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
                     {formatUp(dailyRemaining.energyKcal * mealRatios.dinner)} kcal
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Proteína</span>
+                    <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
                     {formatUp(dailyRemaining.proteinG * mealRatios.dinner)}g
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Carbos</span>
+                    <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
                     {formatUp(dailyRemaining.carbsG * mealRatios.dinner)}g
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Grasa</span>
+                    <span className="text-muted-foreground">{i18n.mealLogFat}</span>
                     {formatUp(dailyRemaining.fatG * mealRatios.dinner)}g
                   </div>
                 </div>
                 <div className="mt-1">
-                  <p className="text-xs text-muted-foreground">Sugerido: {dinnerSuggestion}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Bebidas: Té sin azúcar o Café negro (sin límite)
-                  </p>
+                  <p className="text-xs text-muted-foreground">{i18n.planSuggested} {dinnerSuggestion}</p>
+                  <p className="text-xs text-muted-foreground">{i18n.planBeverages}</p>
                 </div>
               </div>
             </div>
@@ -269,7 +263,7 @@ export function WeeklyPlan({
       {/* Daily target and projection */}
       <div className="rounded-lg border border-border bg-background p-4">
         <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Objetivo diario y proyección
+          {i18n.planDailyTarget}
         </h3>
         <div className="grid grid-cols-4 gap-2 text-xs">
           <div>
@@ -290,7 +284,7 @@ export function WeeklyPlan({
           </div>
         </div>
         <div className="mt-2 text-xs text-muted-foreground">
-          Objetivo: {goal.energyTargetKcal} kcal | {goal.proteinPct}%P / {goal.carbsPct}%C /{' '}
+          {i18n.planObjective} {goal.energyTargetKcal} kcal | {goal.proteinPct}%P / {goal.carbsPct}%C /{' '}
           {goal.fatPct}%F
         </div>
         <div className="mt-1 text-xs">
@@ -302,7 +296,7 @@ export function WeeklyPlan({
                 : 'bg-amber-100 text-amber-800'
             }`}
           >
-            Energía:{' '}
+            {i18n.planBadgeEnergy}{' '}
             {Math.round(
               ((currentTotals.energyKcal + remaining.energyKcal) / goal.energyTargetKcal) * 100,
             )}
@@ -318,7 +312,7 @@ export function WeeklyPlan({
                 : 'bg-amber-100 text-amber-800'
             }`}
           >
-            Proteína:{' '}
+            {i18n.planBadgeProtein}{' '}
             {Math.round(
               ((currentTotals.proteinG + remaining.proteinG) * 4 * 100) / goal.energyTargetKcal,
             )}
@@ -334,7 +328,7 @@ export function WeeklyPlan({
                 : 'bg-amber-100 text-amber-800'
             }`}
           >
-            Carbs:{' '}
+            {i18n.planBadgeCarbs}{' '}
             {Math.round(
               ((currentTotals.carbsG + remaining.carbsG) * 4 * 100) / goal.energyTargetKcal,
             )}
@@ -350,7 +344,7 @@ export function WeeklyPlan({
                 : 'bg-amber-100 text-amber-800'
             }`}
           >
-            Grasa:{' '}
+            {i18n.planBadgeFat}{' '}
             {Math.round(((currentTotals.fatG + remaining.fatG) * 9 * 100) / goal.energyTargetKcal)}%
           </span>
         </div>

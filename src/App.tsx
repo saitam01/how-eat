@@ -62,9 +62,7 @@ export function App() {
       <main className="mx-auto max-w-5xl space-y-4 px-4 py-6">
         <header className="mb-2">
           <h1 className="text-2xl font-bold">how-eat</h1>
-          <p className="text-sm text-muted-foreground">
-            Calculá tus calorías y macros. Sin cuenta, sin servidor, sin red.
-          </p>
+          <p className="text-sm text-muted-foreground">{i18n.tagline}</p>
         </header>
 
         <TabBar active={activeTab} onChange={setActiveTab} />
