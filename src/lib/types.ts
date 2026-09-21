@@ -35,6 +35,13 @@ export interface MealEntry {
   date: string; // local YYYY-MM-DD
 }
 
+export interface WeightEntry {
+  id: string;
+  date: string; // local YYYY-MM-DD
+  weightKg: number;
+  timestamp: number;
+}
+
 export interface MacroGoal {
   energyTargetKcal: number; // TDEE adjusted by goal
   proteinPct: number; // % of energy from protein (0-100)

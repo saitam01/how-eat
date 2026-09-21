@@ -12,6 +12,7 @@ import { ShareButton } from '@/components/ShareButton';
 import { FoodSearch } from '@/components/FoodSearch';
 import { MealLog } from '@/components/MealLog';
 import { WeeklyPlan } from '@/components/WeeklyPlan';
+import { WeightLog } from '@/components/WeightLog';
 import { Disclaimer } from '@/components/Disclaimer';
 import { TabBar, type TabKey } from '@/components/TabBar';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -129,6 +130,8 @@ export function App() {
             <WeeklyPlan goal={goal} mealLogEntries={mealLog.entries} />
           </div>
         )}
+
+        {activeTab === 'progreso' && <WeightLog />}
 
         <Disclaimer />
       </main>
