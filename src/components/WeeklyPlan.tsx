@@ -1,354 +1,137 @@
-import type { MacroGoal, MealEntry } from '@/lib/types';
+import { useMemo } from 'react';
 import { foodDB } from '@/lib/food-db';
-import { entriesForDate, todayLocal } from '@/lib/date';
+import { sanitizeFoodProfile } from '@/lib/food-profile';
+import { generateWeeklyPlan } from '@/lib/weekly-plan';
+import type { DailyTotals, FoodProfileInput, MacroGoal, PlannedMeal } from '@/lib/types';
+import { FoodPreferences } from '@/components/FoodPreferences';
 import i18n from '@/i18n/es.json';
+
+const FOOD_DATASET_VERSION = 'food-db-v1';
+const nutritionFields: readonly [keyof DailyTotals, string, string][] = [
+  ['energyKcal', i18n.mealLogEnergy, 'kcal'],
+  ['proteinG', i18n.mealLogProtein, 'g'],
+  ['carbsG', i18n.mealLogCarbs, 'g'],
+  ['fatG', i18n.mealLogFat, 'g'],
+];
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(value);
+}
+
+function formatSigned(value: number): string {
+  return `${value > 0 ? '+' : ''}${formatNumber(value)}`;
+}
+
+function formatPortion(amount: number, unit: string): string {
+  if (unit === '100g') return `${formatNumber(amount * 100)} g`;
+  if (unit === '100ml') return `${formatNumber(amount * 100)} ml`;
+  return `${formatNumber(amount)} ${unit}`;
+}
+
+function Nutrition({ totals, signed = false }: { totals: DailyTotals; signed?: boolean }) {
+  return (
+    <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs sm:grid-cols-4">
+      {nutritionFields.map(([field, label, unit]) => (
+        <div key={field}>
+          <dt className="text-muted-foreground">{label}</dt>
+          <dd>{signed ? formatSigned(totals[field]) : formatNumber(totals[field])} {unit}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function Meal({ meal }: { meal: PlannedMeal }) {
+  return (
+    <section className="space-y-2 border-t border-border pt-3" aria-label={i18n[`meal${meal.role.charAt(0).toUpperCase()}${meal.role.slice(1)}` as keyof typeof i18n] as string}>
+      <h4 className="text-sm font-semibold">
+        {i18n[`meal${meal.role.charAt(0).toUpperCase()}${meal.role.slice(1)}` as keyof typeof i18n] as string}
+      </h4>
+      <ul className="space-y-1 text-sm">
+        {meal.foods.map((portion) => {
+          const food = foodDB.items.find((item) => item.id === portion.foodId);
+          return <li key={portion.foodId}>{food?.name ?? portion.foodId}: {formatPortion(portion.amount, food?.unit ?? i18n.planUnit)}</li>;
+        })}
+      </ul>
+      <div>
+        <p className="mb-1 text-xs font-medium text-muted-foreground">{i18n.planMealNutrition}</p>
+        <Nutrition totals={meal.totals} />
+      </div>
+    </section>
+  );
+}
 
 export function WeeklyPlan({
   goal,
-  mealLogEntries,
+  profile,
+  onProfileChange,
 }: {
   goal: MacroGoal;
-  mealLogEntries: MealEntry[];
+  profile: FoodProfileInput;
+  onProfileChange: (changes: Partial<FoodProfileInput>) => void;
 }) {
-  const todayEntries = entriesForDate(mealLogEntries, todayLocal());
-
-  // Calculate current totals from today's meal log.
-  const currentTotals = todayEntries.reduce(
-    (acc, entry) => ({
-      energyKcal: acc.energyKcal + entry.energyKcal,
-      proteinG: acc.proteinG + entry.proteinG,
-      carbsG: acc.carbsG + entry.carbsG,
-      fatG: acc.fatG + entry.fatG,
-    }),
-    { energyKcal: 0, proteinG: 0, carbsG: 0, fatG: 0 },
+  const safeProfile = useMemo(() => sanitizeFoodProfile(profile), [profile]);
+  const result = useMemo(
+    () => generateWeeklyPlan({ goal, profile: safeProfile, candidates: foodDB.items, datasetVersion: FOOD_DATASET_VERSION }),
+    [goal, safeProfile],
   );
-
-  // If no goal set, show placeholder
-  if (goal.energyTargetKcal === 0) {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-xl font-bold">{i18n.tabPlan}</h2>
-        <div className="rounded-lg border border-border bg-background p-4">
-          <p className="text-sm text-muted-foreground">{i18n.diaryCTA}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Calculate remaining needed
-  const remaining = {
-    energyKcal: Math.max(0, goal.energyTargetKcal - currentTotals.energyKcal),
-    proteinG: Math.max(
-      0,
-      (goal.energyTargetKcal * goal.proteinPct) / 100 / 4 - currentTotals.proteinG,
-    ),
-    carbsG: Math.max(0, (goal.energyTargetKcal * goal.carbsPct) / 100 / 4 - currentTotals.carbsG),
-    fatG: Math.max(0, (goal.energyTargetKcal * goal.fatPct) / 100 / 9 - currentTotals.fatG),
-  };
-
-  // Days of the week
-  const days = i18n.planDays;
-
-  // Format number with one decimal, rounded up
-  const formatUp = (value: number): string => {
-    return Math.ceil(value * 10) / 10 + '';
-  };
-
-  // Calculate daily remaining (split week into 7 days)
-  const dailyRemaining = {
-    energyKcal: remaining.energyKcal / 7,
-    proteinG: remaining.proteinG / 7,
-    carbsG: remaining.carbsG / 7,
-    fatG: remaining.fatG / 7,
-  };
-
-  // Meal ratios: breakfast 25%, lunch 35%, dinner 40%
-  const mealRatios = {
-    breakfast: 0.25,
-    lunch: 0.35,
-    dinner: 0.4,
-  };
-
-  // Calculate suggested food amounts for each meal type
-  const getFoodAmounts = (macro: 'proteinG' | 'carbsG' | 'fatG', ratio: number): number => {
-    const macroValue = dailyRemaining[macro];
-    if (macroValue <= 0) return 0;
-
-    // grams of food needed per macro unit
-    const macrosPer100g = {
-      proteinG: 31, // chicken breast: 31g protein per 100g
-      carbsG: 23, // rice: 23g carbs per 100g
-      fatG: 100, // olive oil: 100g fat per 100ml
-    }[macro];
-
-    return ((macroValue * ratio) / macrosPer100g) * 100;
-  };
-
-  // Pre-calculate meal data for efficiency
-  const mealData = {
-    breakfast: {
-      ratio: mealRatios.breakfast,
-      proteinGrams: getFoodAmounts('proteinG', mealRatios.breakfast),
-      carbsGrams: getFoodAmounts('carbsG', mealRatios.breakfast),
-      fatML: getFoodAmounts('fatG', mealRatios.breakfast),
-    },
-    lunch: {
-      ratio: mealRatios.lunch,
-      proteinGrams: getFoodAmounts('proteinG', mealRatios.lunch),
-      carbsGrams: getFoodAmounts('carbsG', mealRatios.lunch),
-      fatML: getFoodAmounts('fatG', mealRatios.lunch),
-    },
-    dinner: {
-      ratio: mealRatios.dinner,
-      proteinGrams: getFoodAmounts('proteinG', mealRatios.dinner),
-      carbsGrams: getFoodAmounts('carbsG', mealRatios.dinner),
-      fatML: getFoodAmounts('fatG', mealRatios.dinner),
-    },
-  };
-
-  // Format suggestion string for a meal
-  const formatMealSuggestion = (data: typeof mealData.breakfast): string => {
-    const parts: string[] = [];
-    if (data.proteinGrams > 0) parts.push(`${Math.round(data.proteinGrams)}${i18n.planSuggestionProtein}`);
-    if (data.carbsGrams > 0) parts.push(`${Math.round(data.carbsGrams)}${i18n.planSuggestionCarbs}`);
-    if (data.fatML > 0) parts.push(`${Math.round(data.fatML)}${i18n.planSuggestionFat}`);
-    return parts.length > 0 ? parts.join(', ') : i18n.planNone;
-  };
-
-  // Pre-format the suggestions to avoid complex JSX
-  const breakfastSuggestion = formatMealSuggestion(mealData.breakfast);
-  const lunchSuggestion = formatMealSuggestion(mealData.lunch);
-  const dinnerSuggestion = formatMealSuggestion(mealData.dinner);
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold">{i18n.tabPlan}</h2>
+      <FoodPreferences profile={safeProfile} onChange={onProfileChange} />
 
-      {/* Base meals info */}
-      <div className="rounded-lg border border-border bg-background p-4">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {i18n.planBaseMealsToday}
-        </h3>
-        {todayEntries.length === 0 ? (
+      {goal.energyTargetKcal === 0 ? (
+        <div className="rounded-lg border border-border bg-background p-4" role="status">
+          <h3 className="font-semibold">{i18n.planGoalRequiredTitle}</h3>
           <p className="text-sm text-muted-foreground">{i18n.diaryCTA}</p>
-        ) : (
-          <div className="space-y-2">
-            {todayEntries
-              .map((entry) => {
-                const food = foodDB.items.find((f) => f.id === entry.foodId);
-                if (!food) return null;
-                return (
-                  <div key={entry.id} className="flex items-center justify-between text-xs">
-                    <div>
-                      <p className="truncate font-medium">{food.name}</p>
-                      <p className="text-muted-foreground">
-                        {entry.amount} — {formatUp(entry.energyKcal)} kcal,{' '}
-                        {formatUp(entry.proteinG)}g prot, {formatUp(entry.carbsG)}g carb,{' '}
-                        {formatUp(entry.fatG)}g grasa
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-              .filter(Boolean)}
-          </div>
-        )}
-      </div>
-
-      {/* Reusable daily meal template */}
-      <div className="space-y-4">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {i18n.planDailyTemplate}
-        </h3>
-        {days.map((day, dayIndex) => (
-          <div key={dayIndex} className="rounded-lg border border-border bg-background p-4">
-            <h3 className="mb-2 text-sm font-semibold">{day}</h3>
-
-            {/* Breakfast */}
-            <div className="mb-4 pt-2 border-t border-border">
-              <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {i18n.mealBreakfast}
-              </h4>
-              <div className="space-y-2">
-                <div className="grid grid-cols-4 gap-1 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
-                    {formatUp(dailyRemaining.energyKcal * mealRatios.breakfast)} kcal
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
-                    {formatUp(dailyRemaining.proteinG * mealRatios.breakfast)}g
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
-                    {formatUp(dailyRemaining.carbsG * mealRatios.breakfast)}g
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogFat}</span>
-                    {formatUp(dailyRemaining.fatG * mealRatios.breakfast)}g
-                  </div>
-                </div>
-                <div className="mt-1">
-                  <p className="text-xs text-muted-foreground">{i18n.planSuggested} {breakfastSuggestion}</p>
-                  <p className="text-xs text-muted-foreground">{i18n.planBeverages}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Lunch */}
-            <div className="mb-4 pt-2 border-t border-border">
-              <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {i18n.mealLunch}
-              </h4>
-              <div className="space-y-2">
-                <div className="grid grid-cols-4 gap-1 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
-                    {formatUp(dailyRemaining.energyKcal * mealRatios.lunch)} kcal
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
-                    {formatUp(dailyRemaining.proteinG * mealRatios.lunch)}g
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
-                    {formatUp(dailyRemaining.carbsG * mealRatios.lunch)}g
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogFat}</span>
-                    {formatUp(dailyRemaining.fatG * mealRatios.lunch)}g
-                  </div>
-                </div>
-                <div className="mt-1">
-                  <p className="text-xs text-muted-foreground">{i18n.planSuggested} {lunchSuggestion}</p>
-                  <p className="text-xs text-muted-foreground">{i18n.planBeverages}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Dinner */}
-            <div className="pt-2 border-t border-border">
-              <h4 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                {i18n.mealDinner}
-              </h4>
-              <div className="space-y-2">
-                <div className="grid grid-cols-4 gap-1 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
-                    {formatUp(dailyRemaining.energyKcal * mealRatios.dinner)} kcal
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
-                    {formatUp(dailyRemaining.proteinG * mealRatios.dinner)}g
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
-                    {formatUp(dailyRemaining.carbsG * mealRatios.dinner)}g
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">{i18n.mealLogFat}</span>
-                    {formatUp(dailyRemaining.fatG * mealRatios.dinner)}g
-                  </div>
-                </div>
-                <div className="mt-1">
-                  <p className="text-xs text-muted-foreground">{i18n.planSuggested} {dinnerSuggestion}</p>
-                  <p className="text-xs text-muted-foreground">{i18n.planBeverages}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Daily target and projection */}
-      <div className="rounded-lg border border-border bg-background p-4">
-        <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          {i18n.planDailyTarget}
-        </h3>
-        <div className="grid grid-cols-4 gap-2 text-xs">
-          <div>
-            <span className="text-muted-foreground">{i18n.mealLogEnergy}</span>
-            {formatUp(currentTotals.energyKcal + remaining.energyKcal)} kcal
-          </div>
-          <div>
-            <span className="text-muted-foreground">{i18n.mealLogProtein}</span>
-            {formatUp(currentTotals.proteinG + remaining.proteinG)}g
-          </div>
-          <div>
-            <span className="text-muted-foreground">{i18n.mealLogCarbs}</span>
-            {formatUp(currentTotals.carbsG + remaining.carbsG)}g
-          </div>
-          <div>
-            <span className="text-muted-foreground">{i18n.mealLogFat}</span>
-            {formatUp(currentTotals.fatG + remaining.fatG)}g
-          </div>
         </div>
-        <div className="mt-2 text-xs text-muted-foreground">
-          {i18n.planObjective} {goal.energyTargetKcal} kcal | {goal.proteinPct}%P / {goal.carbsPct}%C /{' '}
-          {goal.fatPct}%F
-        </div>
-        <div className="mt-1 text-xs">
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-              currentTotals.energyKcal + remaining.energyKcal >= goal.energyTargetKcal * 0.9 &&
-              currentTotals.energyKcal + remaining.energyKcal <= goal.energyTargetKcal * 1.1
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-            }`}
-          >
-            {i18n.planBadgeEnergy}{' '}
-            {Math.round(
-              ((currentTotals.energyKcal + remaining.energyKcal) / goal.energyTargetKcal) * 100,
+      ) : result.status === 'infeasible' ? (
+        <section className="rounded-lg border border-destructive/50 bg-background p-4" aria-labelledby="plan-infeasible-title" role="alert">
+          <h3 id="plan-infeasible-title" className="font-semibold">{i18n.planInfeasibleTitle}</h3>
+          <p className="text-sm text-muted-foreground">{i18n.planInfeasibleDescription}</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+            {result.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}
+          </ul>
+        </section>
+      ) : (
+        <>
+          <section className="rounded-lg border border-border bg-background p-4" aria-labelledby="plan-diagnostics-title" role="status">
+            <h3 id="plan-diagnostics-title" className="font-semibold">
+              {result.status === 'feasible' ? i18n.planFeasibleTitle : i18n.planDegradedTitle}
+            </h3>
+            {result.status === 'feasible' ? (
+              <p className="text-sm text-muted-foreground">{i18n.planFeasibleDescription}</p>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">{i18n.planDegradedDescription}</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
+                  {result.issues.map((issue, index) => <li key={`${issue.code}-${index}`}>{issue.message}</li>)}
+                </ul>
+              </>
             )}
-            %
-          </span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ml-2 ${
-              ((currentTotals.proteinG + remaining.proteinG) * 4 * 100) / goal.energyTargetKcal >=
-                goal.proteinPct * 0.9 &&
-              ((currentTotals.proteinG + remaining.proteinG) * 4 * 100) / goal.energyTargetKcal <=
-                goal.proteinPct * 1.1
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-            }`}
-          >
-            {i18n.planBadgeProtein}{' '}
-            {Math.round(
-              ((currentTotals.proteinG + remaining.proteinG) * 4 * 100) / goal.energyTargetKcal,
-            )}
-            %
-          </span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ml-2 ${
-              ((currentTotals.carbsG + remaining.carbsG) * 4 * 100) / goal.energyTargetKcal >=
-                goal.carbsPct * 0.9 &&
-              ((currentTotals.carbsG + remaining.carbsG) * 4 * 100) / goal.energyTargetKcal <=
-                goal.carbsPct * 1.1
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-            }`}
-          >
-            {i18n.planBadgeCarbs}{' '}
-            {Math.round(
-              ((currentTotals.carbsG + remaining.carbsG) * 4 * 100) / goal.energyTargetKcal,
-            )}
-            %
-          </span>
-          <span
-            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ml-2 ${
-              ((currentTotals.fatG + remaining.fatG) * 9 * 100) / goal.energyTargetKcal >=
-                goal.fatPct * 0.9 &&
-              ((currentTotals.fatG + remaining.fatG) * 9 * 100) / goal.energyTargetKcal <=
-                goal.fatPct * 1.1
-                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
-            }`}
-          >
-            {i18n.planBadgeFat}{' '}
-            {Math.round(((currentTotals.fatG + remaining.fatG) * 9 * 100) / goal.energyTargetKcal)}%
-          </span>
-        </div>
-      </div>
+          </section>
+
+          <section className="space-y-4" aria-labelledby="plan-days-title">
+            <h3 id="plan-days-title" className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{i18n.planDaysTitle}</h3>
+            {result.days.map((day, index) => (
+              <article key={i18n.planDays[index]} className="space-y-3 rounded-lg border border-border bg-background p-4" aria-labelledby={`plan-day-${index}`}>
+                <h3 id={`plan-day-${index}`} className="font-semibold">{i18n.planDays[index]}</h3>
+                {day.meals.map((meal) => <Meal key={meal.role} meal={meal} />)}
+                <section className="space-y-1 border-t border-border pt-3" aria-label={i18n.planDailyTotals}>
+                  <h4 className="text-sm font-semibold">{i18n.planDailyTotals}</h4>
+                  <Nutrition totals={day.totals} />
+                </section>
+                <section className="space-y-1" aria-label={i18n.planTargetDeviation}>
+                  <h4 className="text-sm font-semibold">{i18n.planTargetDeviation}</h4>
+                  <p className="text-xs text-muted-foreground">{i18n.planTargetDeviationHint}</p>
+                  <Nutrition totals={day.targetDeviation} signed />
+                </section>
+              </article>
+            ))}
+          </section>
+        </>
+      )}
     </div>
   );
 }

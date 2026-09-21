@@ -3,6 +3,7 @@ import type { PresetKey } from '@/types';
 import type { MacroGoal, FoodItem } from '@/lib/types';
 import { useCalculator } from '@/hooks/useCalculator';
 import { useMealLog } from '@/hooks/useMealLog';
+import { useFoodProfile } from '@/hooks/useFoodProfile';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { loadState, shareUrl } from '@/lib/url';
 import { CalculatorForm } from '@/components/CalculatorForm';
@@ -35,6 +36,7 @@ export function App() {
   };
 
   const mealLog = useMealLog(goal);
+  const { profile, updateProfile } = useFoodProfile();
 
   useEffect(() => {
     if (initial.invalidParams) toast(i18n.invalidParams);
@@ -127,7 +129,7 @@ export function App() {
 
         {activeTab === 'plan' && (
           <div>
-            <WeeklyPlan goal={goal} mealLogEntries={mealLog.entries} />
+            <WeeklyPlan goal={goal} profile={profile} onProfileChange={updateProfile} />
           </div>
         )}
 

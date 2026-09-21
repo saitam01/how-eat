@@ -1,6 +1,14 @@
-import type { FoodItem } from './types';
+import type {
+  Allergen,
+  DietaryPattern,
+  FoodItem,
+  MealRole,
+  PlanningFoodItem,
+  PlanningFoodMetadata,
+  StrictIntolerance,
+} from './types';
 
-const foodItems: FoodItem[] = [
+const rawFoodItems: FoodItem[] = [
   // ─── Proteínas magras ───────────────────────────────────────
   {
     id: 'p01',
@@ -886,6 +894,134 @@ const foodItems: FoodItem[] = [
   },
 ];
 
-export const foodDB = {
+const allPatterns: readonly DietaryPattern[] = ['omnivore', 'vegetarian', 'vegan'];
+const vegetarianPatterns: readonly DietaryPattern[] = ['omnivore', 'vegetarian'];
+const omnivorePatterns: readonly DietaryPattern[] = ['omnivore'];
+const allMeals: readonly MealRole[] = ['breakfast', 'lunch', 'dinner'];
+
+type MetadataInput = Omit<PlanningFoodMetadata, 'allergens' | 'mealRoles' | 'strictIntolerances'> & {
+  allergens?: readonly Allergen[];
+  mealRoles?: readonly MealRole[];
+  strictIntolerances?: readonly StrictIntolerance[];
+};
+
+const planningMetadata: Record<string, PlanningFoodMetadata> = {};
+
+function assignPlanningMetadata(ids: readonly string[], metadata: MetadataInput): void {
+  for (const id of ids) {
+    planningMetadata[id] = {
+      allergens: [],
+      mealRoles: allMeals,
+      strictIntolerances: [],
+      ...metadata,
+    };
+  }
+}
+
+assignPlanningMetadata(['p01', 'p02'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: omnivorePatterns, varietyGroup: 'poultry',
+});
+assignPlanningMetadata(['p03', 'p11', 'p12'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: omnivorePatterns, varietyGroup: 'meat',
+});
+assignPlanningMetadata(['p04', 'p05', 'p08', 'p09'], {
+  nutritionBasis: 'per-100g', allergens: ['fish'], dietaryPatterns: omnivorePatterns, varietyGroup: 'fish',
+});
+assignPlanningMetadata(['p10'], {
+  nutritionBasis: 'per-100g', allergens: ['shellfish'], dietaryPatterns: omnivorePatterns, varietyGroup: 'seafood',
+});
+assignPlanningMetadata(['p06', 'p07'], {
+  nutritionBasis: 'per-100g', allergens: ['egg'], dietaryPatterns: vegetarianPatterns, varietyGroup: 'egg',
+});
+planningMetadata.p07.nutritionBasis = 'per-unit';
+
+assignPlanningMetadata(['f01', 'f02', 'f03', 'f04', 'f05', 'f06', 'f07', 'f08', 'f09', 'f10', 'f11', 'f12', 'f13', 'f14', 'f15', 'f16', 'f17'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: allPatterns, varietyGroup: 'fruit',
+});
+assignPlanningMetadata(['b01', 'b02'], {
+  nutritionBasis: 'per-100ml', dietaryPatterns: allPatterns, varietyGroup: 'beverage', mealRoles: ['breakfast'],
+});
+assignPlanningMetadata(['b03', 'd05'], {
+  nutritionBasis: 'per-100ml', allergens: ['soy'], strictIntolerances: ['soy', 'legume'], dietaryPatterns: allPatterns, varietyGroup: 'beverage', mealRoles: ['breakfast'],
+});
+planningMetadata.d05.nutritionBasis = 'per-100g';
+assignPlanningMetadata(['b04'], {
+  nutritionBasis: 'per-100ml', allergens: ['tree-nut'], dietaryPatterns: allPatterns, varietyGroup: 'beverage', mealRoles: ['breakfast'],
+});
+assignPlanningMetadata(['b05'], {
+  nutritionBasis: 'per-100ml', allergens: ['gluten'], strictIntolerances: ['gluten'], dietaryPatterns: allPatterns, varietyGroup: 'beverage', mealRoles: ['breakfast'],
+});
+assignPlanningMetadata(['b06'], {
+  nutritionBasis: 'per-100ml', dietaryPatterns: allPatterns, varietyGroup: 'beverage', mealRoles: ['breakfast'],
+});
+
+assignPlanningMetadata(['v01', 'v02', 'v03', 'v04', 'v05', 'v06', 'v07', 'v08', 'v09', 'v10', 'v11', 'v12'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: allPatterns, varietyGroup: 'vegetable',
+});
+assignPlanningMetadata(['l01', 'l02', 'l03', 'l04', 'l06', 'l07'], {
+  nutritionBasis: 'per-100g', strictIntolerances: ['legume'], dietaryPatterns: allPatterns, varietyGroup: 'legume',
+});
+assignPlanningMetadata(['l05'], {
+  nutritionBasis: 'per-100g', allergens: ['gluten'], strictIntolerances: ['gluten', 'legume'], dietaryPatterns: allPatterns, varietyGroup: 'grain',
+});
+assignPlanningMetadata(['vg01', 'vg02'], {
+  nutritionBasis: 'per-100g', allergens: ['soy'], strictIntolerances: ['soy', 'legume'], dietaryPatterns: allPatterns, varietyGroup: 'plant-protein',
+});
+assignPlanningMetadata(['vg03'], {
+  nutritionBasis: 'per-100g', allergens: ['gluten'], strictIntolerances: ['gluten'], dietaryPatterns: allPatterns, varietyGroup: 'plant-protein',
+});
+assignPlanningMetadata(['vg04', 'vg05'], {
+  nutritionBasis: 'per-100g', allergens: ['soy', 'gluten'], strictIntolerances: ['soy', 'gluten'], dietaryPatterns: allPatterns, varietyGroup: 'plant-protein',
+});
+assignPlanningMetadata(['d01', 'd02', 'd03', 'd04', 'd06'], {
+  nutritionBasis: 'per-100g', allergens: ['milk'], strictIntolerances: ['lactose'], dietaryPatterns: vegetarianPatterns, varietyGroup: 'dairy',
+});
+assignPlanningMetadata(['g01'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: allPatterns, varietyGroup: 'nuts-and-seeds',
+});
+assignPlanningMetadata(['g02', 'g03', 'g08', 'g09', 'g10', 'g11'], {
+  nutritionBasis: 'per-100g', allergens: ['tree-nut'], dietaryPatterns: allPatterns, varietyGroup: 'nuts-and-seeds',
+});
+assignPlanningMetadata(['g04', 'g05'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: allPatterns, varietyGroup: 'nuts-and-seeds',
+});
+assignPlanningMetadata(['g06', 'g07'], {
+  nutritionBasis: 'per-100g', allergens: ['peanut'], strictIntolerances: ['legume'], dietaryPatterns: allPatterns, varietyGroup: 'nuts-and-seeds',
+});
+assignPlanningMetadata(['gr01', 'gr05'], {
+  nutritionBasis: 'per-100g', allergens: ['gluten'], strictIntolerances: ['gluten'], dietaryPatterns: allPatterns, varietyGroup: 'grain',
+});
+assignPlanningMetadata(['gr03', 'gr04'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: allPatterns, varietyGroup: 'grain',
+});
+assignPlanningMetadata(['gr02'], {
+  nutritionBasis: 'per-unit', allergens: ['gluten'], strictIntolerances: ['gluten'], dietaryPatterns: allPatterns, varietyGroup: 'grain',
+});
+assignPlanningMetadata(['s01'], {
+  nutritionBasis: 'per-unit', allergens: ['milk', 'gluten'], strictIntolerances: ['lactose', 'gluten'], dietaryPatterns: vegetarianPatterns, varietyGroup: 'dairy',
+});
+assignPlanningMetadata(['s02'], {
+  nutritionBasis: 'per-100g', allergens: ['peanut', 'tree-nut'], strictIntolerances: ['legume'], dietaryPatterns: allPatterns, varietyGroup: 'nuts-and-seeds',
+});
+assignPlanningMetadata(['s03'], {
+  nutritionBasis: 'per-100g', allergens: ['gluten', 'egg'], strictIntolerances: ['gluten'], dietaryPatterns: vegetarianPatterns, varietyGroup: 'grain',
+});
+assignPlanningMetadata(['s04'], {
+  nutritionBasis: 'per-100g', dietaryPatterns: allPatterns, varietyGroup: 'nuts-and-seeds',
+});
+assignPlanningMetadata(['s05'], {
+  nutritionBasis: 'per-100g', allergens: ['milk'], strictIntolerances: ['lactose'], dietaryPatterns: vegetarianPatterns, varietyGroup: 'dairy',
+});
+
+const foodItems: PlanningFoodItem[] = rawFoodItems.map((food) => {
+  const planning = planningMetadata[food.id];
+  if (!planning) {
+    throw new Error(`Missing planning metadata for bundled food ${food.id}`);
+  }
+
+  return { ...food, planning };
+});
+
+export const foodDB: { items: FoodItem[] } = {
   items: foodItems,
 };
