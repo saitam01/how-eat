@@ -292,8 +292,8 @@ export function WeeklyPlan({
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
               currentTotals.energyKcal + remaining.energyKcal >= goal.energyTargetKcal * 0.9 &&
               currentTotals.energyKcal + remaining.energyKcal <= goal.energyTargetKcal * 1.1
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-amber-100 text-amber-800'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
             }`}
           >
             {i18n.planBadgeEnergy}{' '}
@@ -308,8 +308,8 @@ export function WeeklyPlan({
                 goal.proteinPct * 0.9 &&
               ((currentTotals.proteinG + remaining.proteinG) * 4 * 100) / goal.energyTargetKcal <=
                 goal.proteinPct * 1.1
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-amber-100 text-amber-800'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
             }`}
           >
             {i18n.planBadgeProtein}{' '}
@@ -324,8 +324,8 @@ export function WeeklyPlan({
                 goal.carbsPct * 0.9 &&
               ((currentTotals.carbsG + remaining.carbsG) * 4 * 100) / goal.energyTargetKcal <=
                 goal.carbsPct * 1.1
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-amber-100 text-amber-800'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
             }`}
           >
             {i18n.planBadgeCarbs}{' '}
@@ -340,8 +340,8 @@ export function WeeklyPlan({
                 goal.fatPct * 0.9 &&
               ((currentTotals.fatG + remaining.fatG) * 9 * 100) / goal.energyTargetKcal <=
                 goal.fatPct * 1.1
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-amber-100 text-amber-800'
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
             }`}
           >
             {i18n.planBadgeFat}{' '}

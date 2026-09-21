@@ -14,6 +14,7 @@ import { MealLog } from '@/components/MealLog';
 import { WeeklyPlan } from '@/components/WeeklyPlan';
 import { Disclaimer } from '@/components/Disclaimer';
 import { TabBar, type TabKey } from '@/components/TabBar';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Toaster } from '@/components/ui/toast';
 import { toast } from '@/lib/toast';
 import { todayLocal } from '@/lib/date';
@@ -61,7 +62,10 @@ export function App() {
     <>
       <main className="mx-auto max-w-5xl space-y-4 px-4 py-6">
         <header className="mb-2">
-          <h1 className="text-2xl font-bold">how-eat</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">how-eat</h1>
+            <ThemeToggle />
+          </div>
           <p className="text-sm text-muted-foreground">{i18n.tagline}</p>
         </header>
 
