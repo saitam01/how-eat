@@ -23,6 +23,25 @@
   --radius: 0.5rem;
 }
 
+.dark {
+  color-scheme: dark;
+  --background: 222 47% 11%;
+  --foreground: 210 40% 98%;
+  --primary: 160 84% 39%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 98%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 98%;
+  --destructive: 0 63% 45%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 217 33% 17%;
+  --input: 217 33% 17%;
+  --ring: 160 84% 39%;
+}
+
 html,
 body {
   margin: 0;

@@ -69,6 +69,7 @@
   "excess": "exceso",
   "onTarget": "en objetivo",
   "tagline": "Calculá tus calorías y macros. Sin cuenta, sin servidor, sin red.",
+  "themeToggle": "Cambiar tema",
   "mealLogDailyProgress": "Progreso diario",
   "searchNoResultsFor": "para \"{query}\"",
   "planDays": ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"],

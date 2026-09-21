@@ -40,8 +40,8 @@ export function MacroSliders({
         <span
           className={
             sum === 100
-              ? 'rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800'
-              : 'rounded bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700'
+              ? 'rounded bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+              : 'rounded bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-950 dark:text-rose-300'
           }
           aria-live="polite"
         >

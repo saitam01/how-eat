@@ -65,7 +65,7 @@ function Field({
       </div>
       {children}
       {error && (
-        <p className="text-xs font-medium text-rose-600" role="alert">
+        <p className="text-xs font-medium text-rose-600 dark:text-rose-400" role="alert">
           {error}
         </p>
       )}

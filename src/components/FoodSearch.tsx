@@ -42,7 +42,7 @@ export function FoodSearch({ onSelect }: FoodSearchProps) {
 
   if (error) {
     return (
-      <div role="alert" className="rounded-md bg-rose-50 p-3 text-sm text-rose-700">
+      <div role="alert" className="rounded-md bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950 dark:text-rose-300">
         {i18n.searchError}
       </div>
     );
