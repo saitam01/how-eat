@@ -22,6 +22,12 @@ function PlannerHarness({ initialProfile = DEFAULT_FOOD_PROFILE }: { initialProf
   );
 }
 
+function stageAllExclusions() {
+  const exclusions = screen.getByLabelText('Alimentos que no querés incluir') as HTMLSelectElement;
+  Array.from(exclusions.options).forEach((option) => { option.selected = true; });
+  fireEvent.change(exclusions);
+}
+
 describe('WeeklyPlan', () => {
   it('renders seven planned days with breakfast, lunch, dinner, food portions, totals, and signed deviations', () => {
     render(<PlannerHarness />);
@@ -37,14 +43,44 @@ describe('WeeklyPlan', () => {
     expect(screen.getAllByText(/^Energía$/).some((label) => label.parentElement?.textContent?.includes('+') || label.parentElement?.textContent?.includes('-'))).toBe(true);
   });
 
-  it('updates planning output safely when a hard food exclusion changes', () => {
+  it('stages preference edits until the user explicitly updates the plan', () => {
     render(<PlannerHarness />);
 
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Restringir todos los alimentos' }));
+    stageAllExclusions();
+
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('Lunes')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Actualizar plan' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar plan' }));
 
     expect(screen.getByRole('alert')).toHaveTextContent('No se puede generar un plan seguro');
     expect(screen.queryByText('Lunes')).not.toBeInTheDocument();
+  });
+
+  it('discards unsaved preference edits and restores the applied values', () => {
+    render(<PlannerHarness />);
+
+    const milk = screen.getByLabelText('Leche');
+    fireEvent.click(milk);
+    expect(milk).toBeChecked();
+    expect(screen.getByRole('button', { name: 'Descartar cambios' })).toBeEnabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Descartar cambios' }));
+
+    expect(milk).not.toBeChecked();
+    expect(screen.getByRole('button', { name: 'Actualizar plan' })).toBeDisabled();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.getByText('Lunes')).toBeInTheDocument();
+  });
+
+  it('synchronizes the plan when its profile is externally replaced', () => {
+    render(<PlannerHarness />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Restringir todos los alimentos' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('No se puede generar un plan seguro');
   });
 
   it('renders infeasible reasons and no planned days', () => {

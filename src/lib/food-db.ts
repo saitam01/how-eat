@@ -1,6 +1,7 @@
 import type {
   Allergen,
   DietaryPattern,
+  FoodCategory,
   FoodItem,
   MealRole,
   PlanningFoodItem,
@@ -899,8 +900,9 @@ const vegetarianPatterns: readonly DietaryPattern[] = ['omnivore', 'vegetarian']
 const omnivorePatterns: readonly DietaryPattern[] = ['omnivore'];
 const allMeals: readonly MealRole[] = ['breakfast', 'lunch', 'dinner'];
 
-type MetadataInput = Omit<PlanningFoodMetadata, 'allergens' | 'mealRoles' | 'strictIntolerances'> & {
+type MetadataInput = Omit<PlanningFoodMetadata, 'allergens' | 'componentRoles' | 'mealRoles' | 'strictIntolerances'> & {
   allergens?: readonly Allergen[];
+  componentRoles?: PlanningFoodMetadata['componentRoles'];
   mealRoles?: readonly MealRole[];
   strictIntolerances?: readonly StrictIntolerance[];
 };
@@ -911,6 +913,7 @@ function assignPlanningMetadata(ids: readonly string[], metadata: MetadataInput)
   for (const id of ids) {
     planningMetadata[id] = {
       allergens: [],
+      componentRoles: [],
       mealRoles: allMeals,
       strictIntolerances: [],
       ...metadata,
@@ -1012,6 +1015,23 @@ assignPlanningMetadata(['s04'], {
 assignPlanningMetadata(['s05'], {
   nutritionBasis: 'per-100g', allergens: ['milk'], strictIntolerances: ['lactose'], dietaryPatterns: vegetarianPatterns, varietyGroup: 'dairy',
 });
+
+const componentRolesForCategory: Record<FoodCategory, PlanningFoodMetadata['componentRoles']> = {
+  protein: ['protein'],
+  vegan: ['protein'],
+  dairy: ['protein'],
+  legume: ['protein', 'carbohydrate-fiber'],
+  grain: ['carbohydrate-fiber'],
+  fruit: ['produce'],
+  vegetable: ['produce'],
+  fat: [],
+  snack: [],
+  beverage: [],
+};
+
+for (const food of rawFoodItems) {
+  planningMetadata[food.id].componentRoles = componentRolesForCategory[food.category];
+}
 
 const foodItems: PlanningFoodItem[] = rawFoodItems.map((food) => {
   const planning = planningMetadata[food.id];

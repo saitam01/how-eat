@@ -18,7 +18,7 @@ describe('food profile persistence', () => {
     expect(DEFAULT_FOOD_PROFILE).toMatchObject({
       dietaryPattern: 'omnivore',
       maxFoodRepeatsPerWeek: 2,
-      maxVarietyGroupRepeatsPerWeek: 3,
+      maxVarietyGroupRepeatsPerWeek: 7,
     });
   });
 

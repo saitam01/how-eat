@@ -40,6 +40,20 @@ describe('planning candidate validation', () => {
     });
   });
 
+  it('rejects unknown or duplicate component roles', () => {
+    const original = foodDB.items[0];
+    if (!original.planning) throw new Error('Bundled food must have planning metadata.');
+    const food = {
+      ...original,
+      planning: { ...original.planning, componentRoles: ['protein', 'protein'] as unknown as ['protein'] },
+    };
+
+    expect(validatePlanningCandidate(food)).toMatchObject({
+      valid: false,
+      issue: { code: 'invalid-planning-metadata' },
+    });
+  });
+
   it('treats allergies, intolerances, exclusions, and dietary patterns as hard filters', () => {
     const salmon = foodDB.items.find((food) => food.id === 'p05')!;
     const yogurt = foodDB.items.find((food) => food.id === 'd01')!;

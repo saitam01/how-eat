@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { foodDB } from '@/lib/food-db';
 import { sanitizeFoodProfile } from '@/lib/food-profile';
 import { generateWeeklyPlan } from '@/lib/weekly-plan';
@@ -13,6 +13,20 @@ const nutritionFields: readonly [keyof DailyTotals, string, string][] = [
   ['carbsG', i18n.mealLogCarbs, 'g'],
   ['fatG', i18n.mealLogFat, 'g'],
 ];
+
+function sameValues(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
+}
+
+function profilesEqual(left: FoodProfileInput, right: FoodProfileInput): boolean {
+  return left.dietaryPattern === right.dietaryPattern
+    && left.maxFoodRepeatsPerWeek === right.maxFoodRepeatsPerWeek
+    && left.maxVarietyGroupRepeatsPerWeek === right.maxVarietyGroupRepeatsPerWeek
+    && sameValues(left.allergens, right.allergens)
+    && sameValues(left.strictIntolerances, right.strictIntolerances)
+    && sameValues(left.excludedFoodIds, right.excludedFoodIds)
+    && sameValues(left.preferredFoodIds, right.preferredFoodIds);
+}
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 1 }).format(value);
@@ -71,15 +85,54 @@ export function WeeklyPlan({
   onProfileChange: (changes: Partial<FoodProfileInput>) => void;
 }) {
   const safeProfile = useMemo(() => sanitizeFoodProfile(profile), [profile]);
+  const [appliedProfile, setAppliedProfile] = useState<FoodProfileInput>(() => safeProfile);
+  const [draftProfile, setDraftProfile] = useState<FoodProfileInput>(() => safeProfile);
+  const previousProfile = useRef(profile);
+
+  useEffect(() => {
+    if (previousProfile.current === profile) return;
+
+    previousProfile.current = profile;
+    setAppliedProfile(safeProfile);
+    setDraftProfile(safeProfile);
+  }, [profile, safeProfile]);
+
+  const hasUnsavedChanges = !profilesEqual(draftProfile, appliedProfile);
   const result = useMemo(
-    () => generateWeeklyPlan({ goal, profile: safeProfile, candidates: foodDB.items, datasetVersion: FOOD_DATASET_VERSION }),
-    [goal, safeProfile],
+    () => generateWeeklyPlan({ goal, profile: appliedProfile, candidates: foodDB.items, datasetVersion: FOOD_DATASET_VERSION }),
+    [goal, appliedProfile],
   );
+
+  const updateDraft = (changes: Partial<FoodProfileInput>) => {
+    setDraftProfile((current) => sanitizeFoodProfile({ ...current, ...changes }));
+  };
+
+  const applyDraft = () => {
+    const nextProfile = sanitizeFoodProfile(draftProfile);
+    setAppliedProfile(nextProfile);
+    setDraftProfile(nextProfile);
+    onProfileChange(nextProfile);
+  };
+
+  const discardDraft = () => setDraftProfile(appliedProfile);
 
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-bold">{i18n.tabPlan}</h2>
-      <FoodPreferences profile={safeProfile} onChange={onProfileChange} />
+      <FoodPreferences profile={draftProfile} onChange={updateDraft} />
+      <div className="space-y-2" aria-label={i18n.planPreferencesActions}>
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {hasUnsavedChanges ? i18n.planPreferencesPending : i18n.planPreferencesApplied}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={applyDraft} disabled={!hasUnsavedChanges} className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50">
+            {i18n.planUpdateAction}
+          </button>
+          <button type="button" onClick={discardDraft} disabled={!hasUnsavedChanges} className="rounded-md border border-input px-3 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-50">
+            {i18n.planDiscardAction}
+          </button>
+        </div>
+      </div>
 
       {goal.energyTargetKcal === 0 ? (
         <div className="rounded-lg border border-border bg-background p-4" role="status">

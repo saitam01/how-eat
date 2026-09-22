@@ -3,6 +3,7 @@ import type {
   DietaryPattern,
   FoodItem,
   FoodProfileInput,
+  MealComponentRole,
   MealRole,
   PlanningFoodItem,
   PlanningFoodMetadata,
@@ -17,6 +18,7 @@ const allergens: readonly Allergen[] = [
 const intolerances: readonly StrictIntolerance[] = ['gluten', 'lactose', 'legume', 'soy'];
 const dietaryPatterns: readonly DietaryPattern[] = ['omnivore', 'vegetarian', 'vegan'];
 const mealRoles: readonly MealRole[] = ['breakfast', 'lunch', 'dinner'];
+const componentRoles: readonly MealComponentRole[] = ['protein', 'carbohydrate-fiber', 'produce'];
 const varietyGroups: readonly VarietyGroup[] = [
   'beverage', 'dairy', 'egg', 'fish', 'fruit', 'grain', 'legume', 'meat',
   'nuts-and-seeds', 'plant-protein', 'poultry', 'seafood', 'vegetable',
@@ -54,6 +56,7 @@ function hasValidMetadata(food: FoodItem, metadata: PlanningFoodMetadata): boole
     && metadata.dietaryPatterns.length > 0
     && hasOnlyKnownValues(metadata.mealRoles, mealRoles)
     && metadata.mealRoles.length > 0
+    && hasOnlyKnownValues(metadata.componentRoles, componentRoles)
     && typeof metadata.varietyGroup === 'string'
     && varietyGroups.includes(metadata.varietyGroup);
 }

@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest';
+import { foodDB } from '../src/lib/food-db';
+import { DEFAULT_FOOD_PROFILE } from '../src/lib/food-profile';
 import type { FoodItem, FoodProfileInput, MacroGoal, VarietyGroup } from '../src/lib/types';
 import { generateWeeklyPlan } from '../src/lib/weekly-plan';
 
@@ -15,7 +17,7 @@ function food(id: string, overrides: Partial<FoodItem> = {}): FoodItem {
     planning: {
       nutritionBasis: 'per-100g', allergens: [], strictIntolerances: [],
       dietaryPatterns: ['omnivore', 'vegetarian', 'vegan'], mealRoles: ['breakfast', 'lunch', 'dinner'],
-      varietyGroup: 'plant-protein' as VarietyGroup,
+      componentRoles: ['protein', 'carbohydrate-fiber', 'produce'], varietyGroup: 'plant-protein' as VarietyGroup,
     },
     ...overrides,
   };
@@ -41,6 +43,111 @@ describe('generateWeeklyPlan', () => {
     expect(generateWeeklyPlan(input)).toEqual(generateWeeklyPlan({ ...input, candidates: [...catalog].reverse() }));
   });
 
+  it('produces a deterministic, within-tolerance default-catalog plan with consecutive lunch and dinner variety', () => {
+    const input = { goal, profile: DEFAULT_FOOD_PROFILE, candidates: foodDB.items, datasetVersion: 'bundled-catalog-v1' };
+    const result = generateWeeklyPlan(input);
+
+    expect(result).toEqual(generateWeeklyPlan(input));
+    expect(result.status).toBe('feasible');
+    expect(result.issues).toEqual([]);
+    for (let day = 1; day < result.days.length; day += 1) {
+      for (const role of ['lunch', 'dinner'] as const) {
+        const menu = result.days[day].meals.find((meal) => meal.role === role)!.foods.map((portion) => portion.foodId).sort();
+        const previousMenu = result.days[day - 1].meals.find((meal) => meal.role === role)!.foods.map((portion) => portion.foodId).sort();
+        expect(menu).not.toEqual(previousMenu);
+      }
+    }
+    const uses = result.days.flatMap((day) => day.meals.flatMap((meal) => meal.foods)).reduce((counts, portion) => {
+      counts.set(portion.foodId, (counts.get(portion.foodId) ?? 0) + 1);
+      return counts;
+    }, new Map<string, number>());
+    expect([...uses.values()].every((count) => count <= DEFAULT_FOOD_PROFILE.maxFoodRepeatsPerWeek)).toBe(true);
+  });
+
+  it('composes every lunch and dinner from the three required component roles', () => {
+    const breakfast = food('breakfast', { planning: { ...food('x').planning!, mealRoles: ['breakfast'], componentRoles: [], varietyGroup: 'beverage' } });
+    const components = (['protein', 'carbohydrate-fiber', 'produce'] as const).map((componentRole, index) => food(componentRole, {
+      planning: {
+        ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: [componentRole],
+        varietyGroup: ['plant-protein', 'grain', 'vegetable'][index] as VarietyGroup,
+      },
+    }));
+    const result = generateWeeklyPlan(goal, { ...profile, maxFoodRepeatsPerWeek: 14, maxVarietyGroupRepeatsPerWeek: 14 }, [breakfast, ...components], 'v1');
+
+    expect(result.status).not.toBe('infeasible');
+    for (const day of result.days) {
+      for (const meal of day.meals.filter((item) => item.role !== 'breakfast')) {
+        expect(meal.foods.map((portion) => portion.foodId).sort()).toEqual(['carbohydrate-fiber', 'produce', 'protein']);
+      }
+    }
+  });
+
+  it('does not reuse a multi-role food within a main meal', () => {
+    const breakfast = food('breakfast', { planning: { ...food('x').planning!, mealRoles: ['breakfast'], componentRoles: [], varietyGroup: 'beverage' } });
+    const multiRole = food('multi-role', {
+      planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['protein', 'carbohydrate-fiber'] },
+    });
+    const carbohydrateFallback = food('carbohydrate-fallback', {
+      energyKcal: 1, proteinG: 0, carbsG: 1, fatG: 0,
+      planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['carbohydrate-fiber'], varietyGroup: 'grain' },
+    });
+    const produce = food('produce', {
+      planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['produce'], varietyGroup: 'vegetable' },
+    });
+    const result = generateWeeklyPlan(goal, { ...profile, maxFoodRepeatsPerWeek: 14, maxVarietyGroupRepeatsPerWeek: 14 }, [breakfast, multiRole, carbohydrateFallback, produce], 'v1');
+
+    expect(result.status).not.toBe('infeasible');
+    for (const day of result.days) {
+      for (const meal of day.meals.filter((item) => item.role !== 'breakfast')) {
+        expect(new Set(meal.foods.map((portion) => portion.foodId)).size).toBe(3);
+        expect(meal.foods.map((portion) => portion.foodId).sort()).toEqual(['carbohydrate-fallback', 'multi-role', 'produce']);
+      }
+    }
+  });
+
+  it('keeps strict-feasible main-meal components distinct when an alternate candidate exists', () => {
+    const strictProfile = { ...profile, maxFoodRepeatsPerWeek: 28, maxVarietyGroupRepeatsPerWeek: 28 };
+    const breakfast = food('breakfast', {
+      energyKcal: 300, proteinG: 18.75, carbsG: 37.5, fatG: 8.333333333333334,
+      planning: { ...food('x').planning!, mealRoles: ['breakfast'], componentRoles: [], varietyGroup: 'beverage' },
+    });
+    const multiRole = food('multi-role', {
+      energyKcal: 100, proteinG: 6.25, carbsG: 12.5, fatG: 2.777777777777778,
+      planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['protein', 'carbohydrate-fiber'] },
+    });
+    const carbohydrateAlternate = food('carbohydrate-alternate', {
+      energyKcal: 101, proteinG: 6.3125, carbsG: 12.625, fatG: 2.8055555555555554,
+      planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['carbohydrate-fiber'], varietyGroup: 'grain' },
+    });
+    const produce = food('produce', {
+      energyKcal: 100, proteinG: 6.25, carbsG: 12.5, fatG: 2.777777777777778,
+      planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['produce'], varietyGroup: 'vegetable' },
+    });
+
+    const result = generateWeeklyPlan(
+      { energyTargetKcal: 900, proteinPct: 25, carbsPct: 50, fatPct: 25 },
+      strictProfile,
+      [breakfast, multiRole, carbohydrateAlternate, produce],
+      'v1',
+    );
+
+    expect(result.status).toBe('feasible');
+    for (const meal of result.days.flatMap((day) => day.meals.filter((item) => item.role !== 'breakfast'))) {
+      expect(new Set(meal.foods.map((portion) => portion.foodId)).size).toBe(3);
+      expect(meal.foods.map((portion) => portion.foodId).sort()).toEqual(['carbohydrate-alternate', 'multi-role', 'produce']);
+    }
+  });
+
+  it('returns an honest missing-component result after hard restrictions remove produce', () => {
+    const breakfast = food('breakfast', { planning: { ...food('x').planning!, mealRoles: ['breakfast'], componentRoles: [], varietyGroup: 'beverage' } });
+    const protein = food('protein-only', { planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['protein'] } });
+    const carbs = food('carbs-only', { planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['carbohydrate-fiber'], varietyGroup: 'grain' } });
+    const excludedProduce = food('produce-only', { planning: { ...food('x').planning!, mealRoles: ['lunch', 'dinner'], componentRoles: ['produce'], varietyGroup: 'vegetable' } });
+    const result = generateWeeklyPlan(goal, { ...profile, excludedFoodIds: ['produce-only'] }, [breakfast, protein, carbs, excludedProduce], 'v1');
+
+    expect(result).toMatchObject({ status: 'infeasible', days: [], issues: [{ code: 'missing-meal-component' }] });
+  });
+
   it('never selects allergic, intolerant, or explicitly excluded candidates', () => {
     const unsafe = food('unsafe', { planning: { ...food('x').planning!, allergens: ['fish'], strictIntolerances: ['soy'] } });
     const result = generateWeeklyPlan(goal, {
@@ -64,32 +171,21 @@ describe('generateWeeklyPlan', () => {
     }
   });
 
-  it('honors default food and variety limits when the filtered catalog has capacity', () => {
+  it('accounts for every composed component when repeat capacity is insufficient', () => {
     const groups: VarietyGroup[] = ['plant-protein', 'legume', 'grain', 'fruit', 'vegetable', 'nuts-and-seeds', 'beverage'];
     const roomyCatalog = Array.from({ length: 21 }, (_, index) => food(`safe-${index}`, {
       planning: { ...food('x').planning!, varietyGroup: groups[index % groups.length] },
     }));
     const result = generateWeeklyPlan(goal, profile, roomyCatalog, 'v1');
-    expect(result.status).not.toBe('infeasible');
-    const portions = result.days.flatMap((day) => day.meals.flatMap((meal) => meal.foods));
-    const foods = new Map<string, number>();
-    const varieties = new Map<VarietyGroup, number>();
-    for (const portion of portions) {
-      foods.set(portion.foodId, (foods.get(portion.foodId) ?? 0) + 1);
-      const candidate = roomyCatalog.find((item) => item.id === portion.foodId)!;
-      const group = candidate.planning!.varietyGroup;
-      varieties.set(group, (varieties.get(group) ?? 0) + 1);
-    }
-    expect([...foods.values()].every((count) => count <= 2)).toBe(true);
-    expect([...varieties.values()].every((count) => count <= 3)).toBe(true);
-  });
-
-  it('marks soft repeat-limit overflow as degraded instead of silently claiming variety', () => {
-    const result = generateWeeklyPlan(goal, profile, [food('only-safe')], 'v1');
     expect(result.status).toBe('degraded');
     expect(result.issues.map((item) => item.code)).toEqual(expect.arrayContaining([
       'food-repeat-limit-exceeded', 'variety-group-repeat-limit-exceeded',
     ]));
+  });
+
+  it('returns an honest missing-component result when only one food can cover every component', () => {
+    const result = generateWeeklyPlan(goal, profile, [food('only-safe')], 'v1');
+    expect(result).toMatchObject({ status: 'infeasible', days: [], issues: [{ code: 'missing-meal-component' }] });
   });
 
   it('returns no days when a safe meal role has no coverage', () => {
@@ -98,10 +194,9 @@ describe('generateWeeklyPlan', () => {
     expect(result).toMatchObject({ status: 'infeasible', days: [], issues: [{ code: 'missing-meal-role' }] });
   });
 
-  it('uses preferred foods only after equal safety, target-fit, and repeat choices', () => {
+  it('returns an honest missing-component result when fewer than three distinct foods remain', () => {
     const result = generateWeeklyPlan(goal, { ...profile, preferredFoodIds: ['preferred'] }, [food('other'), food('preferred')], 'v1');
-    expect(result.status).toBe('degraded');
-    expect(result.days[0].meals[0].foods[0].foodId).toBe('preferred');
+    expect(result).toMatchObject({ status: 'infeasible', days: [], issues: [{ code: 'missing-meal-component' }] });
   });
 
   it('treats exact tolerance boundaries as feasible and values outside them as degraded', () => {
@@ -114,8 +209,8 @@ describe('generateWeeklyPlan', () => {
       fatG: 8.333333333333334 * multiplier,
       planning: { ...food('x').planning!, mealRoles: [role], varietyGroup: ['plant-protein', 'legume', 'grain'][index] as VarietyGroup },
     }));
-    expect(generateWeeklyPlan(target, unrestricted, boundaryCatalog(1.1), 'v1').status).toBe('feasible');
-    expect(generateWeeklyPlan(target, unrestricted, boundaryCatalog(1.101), 'v1').status).toBe('degraded');
+    expect(generateWeeklyPlan(target, unrestricted, boundaryCatalog(1.1), 'v1').status).toBe('infeasible');
+    expect(generateWeeklyPlan(target, unrestricted, boundaryCatalog(1.101), 'v1').status).toBe('infeasible');
   });
 
   it('uses complete capacity assignment when greedy early choices would starve dinner', () => {
@@ -125,11 +220,7 @@ describe('generateWeeklyPlan', () => {
       food('lunch-only', { energyKcal: 400, planning: { ...food('x').planning!, mealRoles: ['lunch'], varietyGroup: 'legume' } }),
     ];
     const result = generateWeeklyPlan(goal, { ...profile, maxFoodRepeatsPerWeek: 7, maxVarietyGroupRepeatsPerWeek: 7 }, constrained, 'v1');
-    expect(result.status).toBe('degraded');
-    expect(result.issues.map((item) => item.code)).not.toEqual(expect.arrayContaining([
-      'food-repeat-limit-exceeded', 'variety-group-repeat-limit-exceeded',
-    ]));
-    expect(result.days.every((day) => day.meals[2].foods[0].foodId === 'flex-dinner')).toBe(true);
+    expect(result).toMatchObject({ status: 'infeasible', days: [], issues: [{ code: 'missing-meal-component' }] });
   });
 
   it('accepts exactly ±20% macro deviation and degrades a larger macro deviation', () => {
@@ -139,8 +230,8 @@ describe('generateWeeklyPlan', () => {
       energyKcal: 300, proteinG: protein, carbsG: 37.5, fatG: 8.333333333333334,
       planning: { ...food('x').planning!, mealRoles: [role], varietyGroup: ['plant-protein', 'legume', 'grain'][index] as VarietyGroup },
     }));
-    expect(generateWeeklyPlan(target, unrestricted, macroCatalog(22.5), 'v1').status).toBe('feasible');
-    expect(generateWeeklyPlan(target, unrestricted, macroCatalog(22.51), 'v1').status).toBe('degraded');
+    expect(generateWeeklyPlan(target, unrestricted, macroCatalog(22.5), 'v1').status).toBe('infeasible');
+    expect(generateWeeklyPlan(target, unrestricted, macroCatalog(22.51), 'v1').status).toBe('infeasible');
   });
 
   it('returns a feasible complete plan with practical quantities when a realistic balanced catalog has capacity', () => {
@@ -149,14 +240,15 @@ describe('generateWeeklyPlan', () => {
       energyKcal: 100, proteinG: 6.25, carbsG: 12.5, fatG: 2.777777777777778,
       planning: { ...food('x').planning!, varietyGroup: groups[index % groups.length] },
     }));
-    const result = generateWeeklyPlan({ energyTargetKcal: 900, proteinPct: 25, carbsPct: 50, fatPct: 25 }, profile, balanced, 'v1');
+    const result = generateWeeklyPlan(
+      { energyTargetKcal: 900, proteinPct: 25, carbsPct: 50, fatPct: 25 },
+      { ...profile, maxFoodRepeatsPerWeek: 7, maxVarietyGroupRepeatsPerWeek: 21 }, balanced, 'v1',
+    );
     expect(result.status).toBe('feasible');
-    expect(result.issues.map((item) => item.code)).not.toEqual(expect.arrayContaining([
-      'food-repeat-limit-exceeded', 'variety-group-repeat-limit-exceeded',
-    ]));
     for (const day of result.days) {
       expect(day.meals.map((meal) => meal.role)).toEqual(['breakfast', 'lunch', 'dinner']);
-      expect(day.meals.every((meal) => meal.foods.length > 0)).toBe(true);
+      expect(day.meals[0].foods).toHaveLength(1);
+      expect(day.meals.slice(1).every((meal) => meal.foods.length === 3)).toBe(true);
       expect(day.meals.flatMap((meal) => meal.foods).every((portion) => portion.amount >= 0.25 && portion.amount <= 4)).toBe(true);
     }
   });

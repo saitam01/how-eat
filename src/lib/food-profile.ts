@@ -19,7 +19,7 @@ export const DEFAULT_FOOD_PROFILE: FoodProfileInput = {
   preferredFoodIds: [],
   dietaryPattern: 'omnivore',
   maxFoodRepeatsPerWeek: 2,
-  maxVarietyGroupRepeatsPerWeek: 3,
+  maxVarietyGroupRepeatsPerWeek: 7,
 };
 
 function isKnownList<T extends string>(value: unknown, known: readonly T[]): value is T[] {

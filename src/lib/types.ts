@@ -29,6 +29,9 @@ export type DietaryPattern = 'omnivore' | 'vegetarian' | 'vegan';
 
 export type MealRole = 'breakfast' | 'lunch' | 'dinner';
 
+/** Required balanced-plate components for lunch and dinner. */
+export type MealComponentRole = 'protein' | 'carbohydrate-fiber' | 'produce';
+
 export type VarietyGroup =
   | 'beverage'
   | 'dairy'
@@ -50,6 +53,8 @@ export interface PlanningFoodMetadata {
   strictIntolerances: readonly StrictIntolerance[];
   dietaryPatterns: readonly DietaryPattern[];
   mealRoles: readonly MealRole[];
+  /** Empty for foods that are not a balanced-plate component. */
+  componentRoles: readonly MealComponentRole[];
   varietyGroup: VarietyGroup;
 }
 
@@ -119,6 +124,7 @@ export type PlanningIssueCode =
   | 'invalid-profile'
   | 'duplicate-food-id'
   | 'missing-meal-role'
+  | 'missing-meal-component'
   | 'target-outside-tolerance'
   | 'food-repeat-limit-exceeded'
   | 'variety-group-repeat-limit-exceeded';

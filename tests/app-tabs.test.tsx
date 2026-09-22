@@ -8,6 +8,20 @@ describe('App tab integration', () => {
     window.history.replaceState({}, '', '/');
   });
 
+  it('persists preferences only when the plan update action is activated', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Plan semanal' }));
+    fireEvent.click(screen.getByLabelText('Leche'));
+
+    expect(window.localStorage.getItem('how-eat-food-profile:v1')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar plan' }));
+
+    expect(JSON.parse(window.localStorage.getItem('how-eat-food-profile:v1') ?? '{}')).toMatchObject({
+      profile: { allergens: ['milk'] },
+    });
+  });
+
   it('keeps all application tabs navigable and wires the Plan tab to persisted preferences', () => {
     render(<App />);
 
